@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Play, Plus, Check } from 'lucide-react';
+import { Play, Plus, Check, Loader2 } from 'lucide-react';
 import type { Content } from '@/lib/types';
 import { useWatchlist } from '@/contexts/WatchlistContext';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,7 @@ type ContentCardProps = {
 };
 
 export function ContentCard({ content }: ContentCardProps) {
-  const { isInWatchlist, addToWatchlist, removeFromWatchlist } = useWatchlist();
+  const { isInWatchlist, addToWatchlist, removeFromWatchlist, isLoading } = useWatchlist();
   const onWatchlist = isInWatchlist(content.id);
   const router = useRouter();
 
@@ -34,6 +34,7 @@ export function ContentCard({ content }: ContentCardProps) {
   };
 
   const handlePlayClick = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     router.push(`/play/${content.id}`);
   };
@@ -59,12 +60,24 @@ export function ContentCard({ content }: ContentCardProps) {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button size="icon" variant="outline" className="h-8 w-8 bg-black/50" onClick={handleWatchlistClick}>
-                    {onWatchlist ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="h-8 w-8 bg-black/50"
+                    onClick={handleWatchlistClick}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : onWatchlist ? (
+                      <Check className="h-4 w-4" />
+                    ) : (
+                      <Plus className="h-4 w-4" />
+                    )}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>{onWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}</p>
+                  <p>{isLoading ? "Loading..." : onWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

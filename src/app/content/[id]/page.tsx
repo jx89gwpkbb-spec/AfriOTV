@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Play, Plus, Check, Star } from 'lucide-react';
+import { Play, Plus, Check, Star, Loader2 } from 'lucide-react';
 
 import { contentData } from '@/lib/data';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import { ContentCarousel } from '@/components/content/ContentCarousel';
 
 export default function ContentDetailPage({ params }: { params: { id: string } }) {
   const content = contentData.find((item) => item.id === params.id);
-  const { isInWatchlist, addToWatchlist, removeFromWatchlist } = useWatchlist();
+  const { isInWatchlist, addToWatchlist, removeFromWatchlist, isLoading } = useWatchlist();
 
   if (!content) {
     notFound();
@@ -85,8 +85,14 @@ export default function ContentDetailPage({ params }: { params: { id: string } }
                   Play
                 </Button>
               </Link>
-              <Button size="lg" variant="secondary" onClick={handleWatchlistClick}>
-                {onWatchlist ? <Check className="mr-2" /> : <Plus className="mr-2" />}
+              <Button size="lg" variant="secondary" onClick={handleWatchlistClick} disabled={isLoading}>
+                {isLoading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : onWatchlist ? (
+                  <Check className="mr-2" />
+                ) : (
+                  <Plus className="mr-2" />
+                )}
                 Watchlist
               </Button>
             </div>
