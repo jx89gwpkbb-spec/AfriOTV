@@ -34,6 +34,7 @@ export {
   useUser,
   type User,
   type UserProfile,
+  type Claims,
 } from '@/firebase/auth/use-user';
 export { FirebaseProvider, useFirebase, useFirebaseApp, useAuth, useFirestore } from '@/firebase/provider';
 export { FirebaseClientProvider } from '@/firebase/client-provider';

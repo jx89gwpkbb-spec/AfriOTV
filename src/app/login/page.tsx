@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Clapperboard, Loader2 } from "lucide-react";
 import {
@@ -25,6 +25,8 @@ import { Label } from "@/components/ui/label";
 export default function LoginPage() {
   const auth = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect");
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,7 +38,7 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.push("/");
+      router.push(redirect || "/");
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -53,8 +55,8 @@ export default function LoginPage() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      router.push("/");
-    } catch (error: any) {
+      router.push(redirect || "/");
+    } catch (error: any) => {
       toast({
         variant: "destructive",
         title: "Google Login Failed",

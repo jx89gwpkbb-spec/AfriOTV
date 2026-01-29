@@ -18,11 +18,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, LogOut, Settings } from "lucide-react";
+import { User, LogOut, Settings, Shield } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export function UserNav() {
-  const { user, profile, isLoading } = useUser();
+  const { user, profile, claims, isLoading } = useUser();
   const auth = useAuth();
   const router = useRouter();
 
@@ -78,6 +78,14 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
+          {claims?.admin && (
+            <DropdownMenuItem asChild>
+               <Link href="/admin">
+                <Shield className="mr-2 h-4 w-4" />
+                <span>Admin</span>
+              </Link>
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem asChild>
              <Link href="/profile">
               <User className="mr-2 h-4 w-4" />
