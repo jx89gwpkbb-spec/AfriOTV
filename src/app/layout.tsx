@@ -35,7 +35,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <head />
-      <body className={cn('font-body antialiased min-h-screen flex flex-col', playfair.variable, ptSans.variable)}>
+      <body className={cn('font-body antialiased min-h-screen flex flex-col', playfair.variable, ptSans.variable)} suppressHydrationWarning>
         <FirebaseClientProvider>
           <WatchlistProvider>
             <Header />
