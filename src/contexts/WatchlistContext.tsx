@@ -1,54 +1,82 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from '@/firebase';
+import { useFirestore } from '@/firebase/provider';
+import { collection, addDoc, deleteDoc, serverTimestamp, doc } from 'firebase/firestore';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 interface WatchlistContextType {
   watchlist: string[];
   addToWatchlist: (id: string) => void;
   removeFromWatchlist: (id: string) => void;
   isInWatchlist: (id: string) => boolean;
+  isLoading: boolean;
 }
 
 const WatchlistContext = createContext<WatchlistContextType | undefined>(undefined);
 
 export const WatchlistProvider = ({ children }: { children: React.ReactNode }) => {
-  const [watchlist, setWatchlist] = useState<string[]>([]);
+  const { user } = useUser();
+  const firestore = useFirestore();
   const { toast } = useToast();
 
-  useEffect(() => {
-    try {
-      const storedWatchlist = localStorage.getItem('afriotv-watchlist');
-      if (storedWatchlist) {
-        setWatchlist(JSON.parse(storedWatchlist));
-      }
-    } catch (error) {
-      console.error("Could not load watchlist from local storage", error);
-    }
-  }, []);
+  const watchlistCollectionRef = useMemo(() => {
+    if (!user || !firestore) return null;
+    return collection(firestore, 'users', user.uid, 'watchlist');
+  }, [user, firestore]);
+  
+  const { data: watchlistItems, isLoading } = useCollection<{contentId: string, id: string}>(watchlistCollectionRef);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem('afriotv-watchlist', JSON.stringify(watchlist));
-    } catch (error) {
-      console.error("Could not save watchlist to local storage", error);
-    }
-  }, [watchlist]);
-
+  const watchlist = useMemo(() => watchlistItems?.map(item => item.contentId) || [], [watchlistItems]);
+  
   const addToWatchlist = (id: string) => {
-    setWatchlist((prev) => {
-      if (prev.includes(id)) return prev;
-      toast({ title: "Added to Watchlist", description: "You can find it on your watchlist page." });
-      return [...prev, id];
-    });
+    if (!watchlistCollectionRef) {
+        toast({
+            variant: "destructive",
+            title: "Please log in",
+            description: "You need to be logged in to add items to your watchlist.",
+        });
+        return;
+    }
+    const data = {
+        contentId: id,
+        addedAt: serverTimestamp(),
+    };
+    addDoc(watchlistCollectionRef, data)
+        .then(() => {
+            toast({ title: "Added to Watchlist", description: "You can find it on your watchlist page." });
+        })
+        .catch(async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+                path: watchlistCollectionRef.path,
+                operation: 'create',
+                requestResourceData: data,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
   };
 
-  const removeFromWatchlist = (id:string) => {
-    setWatchlist((prev) => {
-      if (!prev.includes(id)) return prev;
-      toast({ title: "Removed from Watchlist" });
-      return prev.filter((item) => item !== id);
-    });
+  const removeFromWatchlist = (id: string) => {
+    if (!watchlistCollectionRef) return;
+    const itemToRemove = watchlistItems?.find(item => item.contentId === id);
+    if (!itemToRemove) return;
+
+    const docRef = doc(watchlistCollectionRef, itemToRemove.id);
+    deleteDoc(docRef)
+        .then(() => {
+            toast({ title: "Removed from Watchlist" });
+        })
+        .catch(async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+                path: docRef.path,
+                operation: 'delete',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
   };
 
   const isInWatchlist = (id: string) => {
@@ -56,7 +84,7 @@ export const WatchlistProvider = ({ children }: { children: React.ReactNode }) =
   };
 
   return (
-    <WatchlistContext.Provider value={{ watchlist, addToWatchlist, removeFromWatchlist, isInWatchlist }}>
+    <WatchlistContext.Provider value={{ watchlist, addToWatchlist, removeFromWatchlist, isInWatchlist, isLoading }}>
       {children}
     </WatchlistContext.Provider>
   );

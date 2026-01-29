@@ -12,3 +12,9 @@ export type Content = {
   releaseYear: number;
   isTrending?: boolean;
 };
+
+export interface UserProfile {
+  displayName: string;
+  email: string;
+  photoURL?: string;
+}
