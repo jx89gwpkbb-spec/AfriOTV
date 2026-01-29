@@ -37,7 +37,7 @@ export default function ProfilePage() {
     }
   }, [isUserLoading, user, router]);
 
-  if (isUserLoading || !user) {
+  if (isUserLoading || !user || !firestore) {
     return (
       <div className="flex justify-center items-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -47,14 +47,15 @@ export default function ProfilePage() {
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
     setIsSaving(true);
     
     try {
+      // 1. Update Firebase Auth profile
       if (user.displayName !== displayName) {
           await updateProfile(user, { displayName });
       }
 
+      // 2. Update Firestore document
       const userDocRef = doc(firestore, "users", user.uid);
       const profileData = {
           displayName: displayName,
@@ -62,24 +63,27 @@ export default function ProfilePage() {
           photoURL: user.photoURL,
       };
 
-      await setDoc(userDocRef, profileData, { merge: true });
-      
-      toast({
-        title: "Profile Updated",
-        description: "Your profile has been updated successfully.",
-      });
-
-    } catch(err) {
-       const userDocRef = doc(firestore, "users", user.uid);
-       const profileData = {
-          displayName: displayName,
-      };
-       const permissionError = new FirestorePermissionError({
-          path: userDocRef.path,
-          operation: 'update',
-          requestResourceData: profileData
+      setDoc(userDocRef, profileData, { merge: true })
+        .then(() => {
+            toast({
+                title: "Profile Updated",
+                description: "Your profile has been updated successfully.",
+            });
+        })
+        .catch((err) => {
+           const permissionError = new FirestorePermissionError({
+              path: userDocRef.path,
+              operation: 'update',
+              requestResourceData: profileData
+            });
+            errorEmitter.emit('permission-error', permissionError);
         });
-        errorEmitter.emit('permission-error', permissionError);
+    } catch(authError: any) {
+        toast({
+            variant: "destructive",
+            title: "Authentication Error",
+            description: authError.message,
+        });
     } finally {
       setIsSaving(false);
     }
