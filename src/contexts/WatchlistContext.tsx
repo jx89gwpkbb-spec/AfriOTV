@@ -18,7 +18,7 @@ export const WatchlistProvider = ({ children }: { children: React.ReactNode }) =
 
   useEffect(() => {
     try {
-      const storedWatchlist = localStorage.getItem('streamverse-watchlist');
+      const storedWatchlist = localStorage.getItem('afriotv-watchlist');
       if (storedWatchlist) {
         setWatchlist(JSON.parse(storedWatchlist));
       }
@@ -29,7 +29,7 @@ export const WatchlistProvider = ({ children }: { children: React.ReactNode }) =
 
   useEffect(() => {
     try {
-      localStorage.setItem('streamverse-watchlist', JSON.stringify(watchlist));
+      localStorage.setItem('afriotv-watchlist', JSON.stringify(watchlist));
     } catch (error) {
       console.error("Could not save watchlist to local storage", error);
     }

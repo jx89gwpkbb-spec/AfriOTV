@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'StreamVerse',
+  title: 'AfriOTV',
   description: 'Your universe of movies and TV shows.',
 };
 

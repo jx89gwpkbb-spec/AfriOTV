@@ -19,7 +19,7 @@ export default function SignupPage() {
           <div className="flex justify-center mb-4">
             <Clapperboard className="h-8 w-8 text-accent" />
           </div>
-          <CardTitle className="text-2xl font-headline text-center">Join StreamVerse</CardTitle>
+          <CardTitle className="text-2xl font-headline text-center">Join AfriOTV</CardTitle>
           <CardDescription className="text-center">
             Enter your information to create an account
           </CardDescription>
