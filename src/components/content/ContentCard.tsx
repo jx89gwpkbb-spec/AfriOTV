@@ -2,9 +2,9 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Play, Plus, Check } from 'lucide-react';
 import type { Content } from '@/lib/types';
-import { cn } from '@/lib/utils';
 import { useWatchlist } from '@/contexts/WatchlistContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,14 +21,21 @@ type ContentCardProps = {
 export function ContentCard({ content }: ContentCardProps) {
   const { isInWatchlist, addToWatchlist, removeFromWatchlist } = useWatchlist();
   const onWatchlist = isInWatchlist(content.id);
+  const router = useRouter();
 
   const handleWatchlistClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (onWatchlist) {
       removeFromWatchlist(content.id);
     } else {
       addToWatchlist(content.id);
     }
+  };
+
+  const handlePlayClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    router.push(`/play/${content.id}`);
   };
 
   return (
@@ -46,11 +53,9 @@ export function ContentCard({ content }: ContentCardProps) {
         <div className="absolute bottom-0 left-0 right-0 p-4 transform translate-y-8 group-hover:translate-y-0 transition-transform duration-300">
           <h3 className="text-white font-bold truncate">{content.title}</h3>
           <div className="flex items-center justify-between mt-2">
-            <Link href={`/play/${content.id}`} onClick={(e) => e.stopPropagation()}>
-              <Button size="icon" className="h-8 w-8">
-                <Play className="h-4 w-4" />
-              </Button>
-            </Link>
+            <Button size="icon" className="h-8 w-8" onClick={handlePlayClick}>
+              <Play className="h-4 w-4" />
+            </Button>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
