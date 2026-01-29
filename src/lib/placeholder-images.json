@@ -1,3 +1,100 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "poster-1",
+      "description": "Futuristic soldier in a neon-lit city",
+      "imageUrl": "https://images.unsplash.com/photo-1645251024808-b7928e268834?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxzY2ktZmklMjBzb2xkaWVyfGVufDB8fHx8MTc2OTY2NDAxMHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "sci-fi soldier"
+    },
+    {
+      "id": "poster-2",
+      "description": "A group of friends laughing in a cafe",
+      "imageUrl": "https://images.unsplash.com/photo-1545580140-ab89a0426d37?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxmcmllbmRzJTIwbGF1Z2hpbmd8ZW58MHx8fHwxNzY5NTc5MDA5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "friends laughing"
+    },
+    {
+      "id": "poster-3",
+      "description": "A spaceship exploring a nebula",
+      "imageUrl": "https://images.unsplash.com/photo-1528542071754-091278c27570?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxzcGFjZXNoaXAlMjBuZWJ1bGF8ZW58MHx8fHwxNzY5NjY0MDEwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "spaceship nebula"
+    },
+    {
+      "id": "poster-4",
+      "description": "A detective looking at clues on a board",
+      "imageUrl": "https://images.unsplash.com/photo-1668605238342-b5238f8569b0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxkZXRlY3RpdmUlMjBib2FyZHxlbnwwfHx8fDE3Njk1NTM4OTR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "detective board"
+    },
+    {
+      "id": "poster-5",
+      "description": "A car chase in a bustling city",
+      "imageUrl": "https://images.unsplash.com/photo-1761044414879-fc8154a6df27?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxjYXIlMjBjaGFzZXxlbnwwfHx8fDE3Njk2NTYwNTF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "car chase"
+    },
+    {
+      "id": "poster-6",
+      "description": "A knight standing in front of a castle",
+      "imageUrl": "https://images.unsplash.com/photo-1592080430939-b6139b765123?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxrbmlnaHQlMjBjYXN0bGV8ZW58MHx8fHwxNzY5NjY0MDEwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "knight castle"
+    },
+    {
+      "id": "poster-7",
+      "description": "A couple on a romantic date",
+      "imageUrl": "https://images.unsplash.com/photo-1643639779898-b41edc0bdcca?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxyb21hbnRpYyUyMGRhdGV8ZW58MHx8fHwxNzY5NjY0MDEwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "romantic date"
+    },
+    {
+      "id": "poster-8",
+      "description": "A zombie horde approaching",
+      "imageUrl": "https://images.unsplash.com/photo-1568914359967-d4c048bb3aa8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHx6b21iaWUlMjBob3JkZXxlbnwwfHx8fDE3Njk1ODkxODh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "zombie horde"
+    },
+    {
+      "id": "cover-1",
+      "description": "Wide shot of a futuristic cityscape at night",
+      "imageUrl": "https://images.unsplash.com/photo-1597006372162-848bbbe84b99?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxmdXR1cmlzdGljJTIwY2l0eXNjYXBlfGVufDB8fHx8MTc2OTY1NTIyMnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "futuristic cityscape"
+    },
+    {
+      "id": "cover-2",
+      "description": "Wide shot of a cozy cafe interior",
+      "imageUrl": "https://images.unsplash.com/photo-1648462908676-8305f0eff8e0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxjYWZlJTIwaW50ZXJpb3J8ZW58MHx8fHwxNzY5NjAwMjc1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "cafe interior"
+    },
+    {
+      "id": "cover-3",
+      "description": "Expansive view of a colorful nebula in space",
+      "imageUrl": "https://images.unsplash.com/photo-1614926037592-5d7aec4d5f8c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxjb2xvcmZ1bCUyMG5lYnVsYXxlbnwwfHx8fDE3Njk1OTYzMTh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "colorful nebula"
+    },
+    {
+      "id": "cover-4",
+      "description": "A dimly lit detective's office",
+      "imageUrl": "https://images.unsplash.com/photo-1762180980045-4d7c5a6c0fc9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxkZXRlY3RpdmUlMjBvZmZpY2V8ZW58MHx8fHwxNzY5NjY0MDEwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "detective office"
+    },
+    {
+      "id": "cover-5",
+      "description": "Aerial view of a city highway at night",
+      "imageUrl": "https://images.unsplash.com/photo-1661277801555-51388fbbe9fd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxjaXR5JTIwaGlnaHdheXxlbnwwfHx8fDE3Njk2NjQwMTB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "city highway"
+    },
+    {
+      "id": "cover-6",
+      "description": "Panoramic view of a medieval castle",
+      "imageUrl": "https://images.unsplash.com/photo-1581929955252-64ceec9c2938?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxtZWRpZXZhbCUyMGNhc3RsZXxlbnwwfHx8fDE3Njk1ODk5NzN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "medieval castle"
+    },
+    {
+      "id": "cover-7",
+      "description": "A beautiful park at sunset",
+      "imageUrl": "https://images.unsplash.com/photo-1653245343354-36c36b8fc2a4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxwYXJrJTIwc3Vuc2V0fGVufDB8fHx8MTc2OTY2NDAxMHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "park sunset"
+    },
+    {
+      "id": "cover-8",
+      "description": "An abandoned, desolate city street",
+      "imageUrl": "https://images.unsplash.com/photo-1542453232517-7b261a18f9b9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhYmFuZG9uZWQlMjBzdHJlZXR8ZW58MHx8fHwxNzY5NjY0MDEwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "abandoned street"
+    }
+  ]
 }
