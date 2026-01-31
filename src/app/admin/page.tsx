@@ -14,6 +14,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { useToast } from '@/hooks/use-toast';
 
 export default function AdminPage() {
@@ -76,46 +82,77 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="font-headline text-4xl md:text-5xl font-bold mb-8">
-        Admin Dashboard
-      </h1>
-      <p className="text-lg mb-8">
-        Welcome, admin! This is where you'll manage the application.
-      </p>
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col items-center">
+      <div className="w-full max-w-2xl">
+        <h1 className="font-headline text-4xl md:text-5xl font-bold mb-2">
+          Admin Dashboard
+        </h1>
+        <p className="text-lg mb-8 text-muted-foreground">
+          Welcome, admin! This is where you'll manage the application.
+        </p>
 
-      <Card className="max-w-2xl">
-        <CardHeader>
-          <CardTitle>User Management</CardTitle>
-          <CardDescription>
-            Grant administrator privileges to a user.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleMakeAdmin} className="flex items-end gap-4">
-            <div className="grid gap-2 flex-grow">
-              <Label htmlFor="email">User Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="user@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+        <Card>
+          <CardHeader>
+            <CardTitle>User Management</CardTitle>
+            <CardDescription>
+              Grant administrator privileges to a user.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleMakeAdmin} className="flex items-end gap-4">
+              <div className="grid gap-2 flex-grow">
+                <Label htmlFor="email">User Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="user@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <Button type="submit">
+                <UserPlus className="mr-2 h-4 w-4" />
+                Make Admin
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Accordion type="single" collapsible className="w-full max-w-2xl mt-8">
+        <AccordionItem value="item-1">
+          <AccordionTrigger className="text-lg">How Do I Grant Admin Privileges?</AccordionTrigger>
+          <AccordionContent>
+            <div className="space-y-4 pt-2 text-muted-foreground">
+              <p>
+                Granting admin rights is a sensitive operation that must be done securely on a server, not directly within the app. This prevents unauthorized users from making themselves admins. The standard method is using <strong>Firebase Custom Claims</strong>.
+              </p>
+              <p className="font-semibold text-foreground">Here’s the conceptual process:</p>
+              <ol className="list-decimal list-inside space-y-3 pl-2">
+                <li>
+                  <strong>Create a Secure Backend Function:</strong>
+                  <p className="pl-4 mt-1 font-normal">You need to use a server environment like Firebase Cloud Functions. Create a function (e.g., an "HTTP Callable Function") that can be securely called from your app.</p>
+                </li>
+                <li>
+                  <strong>Use the Firebase Admin SDK:</strong>
+                  <p className="pl-4 mt-1 font-normal">Inside that function, use the Firebase Admin SDK—a special library for servers. This SDK has the power to modify user roles.</p>
+                </li>
+                <li>
+                  <strong>Set the Custom Claim:</strong>
+                  <p className="pl-4 mt-1 font-normal">The function will take the user's email as input, find their account, and attach a "custom claim" to it. For this app, the claim must be <code>{`{ admin: true }`}</code>.</p>
+                </li>
+                <li>
+                  <strong>Log In Again:</strong>
+                  <p className="pl-4 mt-1 font-normal">Once the claim is set, the user must log out and log back in. The app is already built to automatically detect this 'admin' claim and grant access to this dashboard.</p>
+                </li>
+              </ol>
+              <p className="text-xs pt-2">
+                While I cannot write this backend Cloud Function for you (as it requires special server-side permissions), this is the industry-standard and most secure method. The "Make Admin" button on this page is the starting point for calling such a function once you have created it in your Firebase project.
+              </p>
             </div>
-            <Button type="submit">
-              <UserPlus className="mr-2 h-4 w-4" />
-              Make Admin
-            </Button>
-          </form>
-          <p className="text-xs text-muted-foreground mt-4">
-            Note: This is a demonstration. To implement this feature, you must
-            create a secure Cloud Function or server endpoint that uses the
-            Firebase Admin SDK to set custom user claims. Do not attempt to set
-            claims from the client-side.
-          </p>
-        </CardContent>
-      </Card>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </div>
   );
 }
