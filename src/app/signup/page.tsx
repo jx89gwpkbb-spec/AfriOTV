@@ -79,20 +79,15 @@ export default function SignupPage() {
           setIsProcessingRedirect(false);
         }
       } catch (error: any) {
-        let description = "An unexpected error occurred. Please try again.";
-        switch (error.code) {
-          case 'auth/unauthorized-domain':
+        if (error.code === 'auth/unauthorized-domain') {
             setShowAuthDomainError(true);
-            break;
-          default:
-            description = `An error occurred: ${error.message} (Code: ${error.code})`;
-            break;
+        } else {
+            toast({
+                variant: "destructive",
+                title: "Google Signup Failed",
+                description: error.message || "An unexpected error occurred during redirect.",
+            });
         }
-        toast({
-          variant: "destructive",
-          title: "Google Signup Failed",
-          description: description,
-        });
         setIsProcessingRedirect(false);
         setGoogleLoading(false);
       }
@@ -161,7 +156,20 @@ export default function SignupPage() {
     if (!auth) return;
     setGoogleLoading(true);
     const provider = new GoogleAuthProvider();
-    await signInWithRedirect(auth, provider);
+    try {
+        await signInWithRedirect(auth, provider);
+    } catch (error: any) {
+        if (error.code === 'auth/unauthorized-domain') {
+            setShowAuthDomainError(true);
+        } else {
+            toast({
+                variant: "destructive",
+                title: "Google Signup Failed",
+                description: error.message || "An unexpected error occurred.",
+            });
+        }
+        setGoogleLoading(false);
+    }
   };
   
   if (isProcessingRedirect) {
