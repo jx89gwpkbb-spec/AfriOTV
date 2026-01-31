@@ -67,10 +67,25 @@ export default function SignupPage() {
 
       router.push("/");
     } catch (error: any) {
+      let description = "An unexpected error occurred. Please try again.";
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          description = "This email address is already in use by another account.";
+          break;
+        case 'auth/weak-password':
+          description = "The password is too weak. Please choose a stronger password (at least 6 characters).";
+          break;
+        case 'auth/invalid-email':
+          description = "The email address is not valid. Please check the format.";
+          break;
+        default:
+          description = `An error occurred: ${error.message} (Code: ${error.code})`;
+          break;
+      }
       toast({
         variant: "destructive",
         title: "Signup Failed",
-        description: error.message,
+        description: description,
       });
     } finally {
       setIsLoading(false);
@@ -102,10 +117,22 @@ export default function SignupPage() {
 
       router.push("/");
     } catch (error: any) {
+      let description = "An unexpected error occurred. Please try again.";
+      switch (error.code) {
+        case 'auth/popup-closed-by-user':
+          description = "The Google sign-in window was closed before completing. Please try again.";
+          break;
+        case 'auth/cancelled-popup-request':
+            description = "The sign-in process was cancelled. Please try again.";
+            break;
+        default:
+          description = `An error occurred: ${error.message} (Code: ${error.code})`;
+          break;
+      }
       toast({
         variant: "destructive",
         title: "Google Signup Failed",
-        description: error.message,
+        description: description,
       });
     } finally {
       setGoogleLoading(false);

@@ -40,10 +40,22 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, email, password);
       router.push(redirect || "/");
     } catch (error: any) {
+      let description = "An unexpected error occurred. Please try again.";
+      switch (error.code) {
+        case 'auth/invalid-credential':
+          description = "The email or password you entered is incorrect. Please double-check and try again.";
+          break;
+        case 'auth/network-request-failed':
+          description = "A network error occurred. Please check your internet connection.";
+          break;
+        default:
+          description = `An error occurred: ${error.message} (Code: ${error.code})`;
+          break;
+      }
       toast({
         variant: "destructive",
         title: "Login Failed",
-        description: error.message,
+        description: description,
       });
     } finally {
       setIsLoading(false);
@@ -57,10 +69,22 @@ export default function LoginPage() {
       await signInWithPopup(auth, provider);
       router.push(redirect || "/");
     } catch (error: any) {
+      let description = "An unexpected error occurred. Please try again.";
+      switch (error.code) {
+        case 'auth/popup-closed-by-user':
+          description = "The Google sign-in window was closed before completing. Please try again.";
+          break;
+        case 'auth/cancelled-popup-request':
+          description = "The sign-in process was cancelled. Please try again.";
+          break;
+        default:
+          description = `An error occurred: ${error.message} (Code: ${error.code})`;
+          break;
+      }
       toast({
         variant: "destructive",
         title: "Google Login Failed",
-        description: error.message,
+        description: description,
       });
     } finally {
       setGoogleLoading(false);
