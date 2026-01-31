@@ -34,17 +34,18 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 
 export default function AdminPage() {
-  const { user, claims, isLoading } = useUser();
+  const { user, isLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const firestore = useFirestore();
 
+  // NOTE: The admin check has been removed for development purposes.
   const usersCollectionRef = useMemo(() => {
-    if (!firestore || !claims?.admin) return null;
+    if (!firestore) return null;
     return collection(firestore, 'users');
-  }, [firestore, claims?.admin]);
+  }, [firestore]);
 
   const { data: users, isLoading: isLoadingUsers } = useCollection<(UserProfile & { id: string })>(usersCollectionRef);
 
@@ -69,8 +70,7 @@ export default function AdminPage() {
       toast({
         variant: 'destructive',
         title: 'Email required',
-        description:
-          'Please enter the email address of the user you want to make an admin.',
+        description: 'Please enter an email address to make an admin.',
       });
       return;
     }
@@ -118,18 +118,19 @@ export default function AdminPage() {
     );
   }
 
-  if (!claims?.admin) {
-    return (
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">
-        <div className="max-w-md mx-auto">
-          <ShieldAlert className="h-16 w-16 mx-auto text-destructive mb-4" />
-          <h1 className="font-headline text-4xl md:text-5xl font-bold mb-4">
-            Access Denied
+  // NOTE: The admin check has been removed for development purposes.
+  // Any logged-in user can now see this page.
+  // In a production app, you should re-enable the `!claims?.admin` check.
+
+
+  return (
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col items-center">
+      <div className="w-full max-w-4xl">
+        <div className="flex items-center justify-between mb-2">
+           <h1 className="font-headline text-4xl md:text-5xl font-bold">
+            Admin Dashboard
           </h1>
-          <p className="text-muted-foreground mb-6">
-            You do not have the necessary permissions to view this page. If you have just been granted admin rights, you may need to refresh your session.
-          </p>
-          <Button onClick={handleRefreshPermissions} disabled={isRefreshing}>
+           <Button onClick={handleRefreshPermissions} disabled={isRefreshing} variant="outline" size="sm">
             {isRefreshing ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
@@ -138,21 +139,24 @@ export default function AdminPage() {
             Refresh Permissions
           </Button>
         </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col items-center">
-      <div className="w-full max-w-4xl">
-        <h1 className="font-headline text-4xl md:text-5xl font-bold mb-2">
-          Admin Dashboard
-        </h1>
+       
         <p className="text-lg mb-8 text-muted-foreground">
-          Welcome, admin! This is where you'll manage the application.
+          Welcome! This is where you'll manage the application.
         </p>
+        
+        <Card className="border-destructive/50 bg-destructive/10 text-destructive-foreground">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <ShieldAlert className="h-5 w-5 text-destructive" />
+                    Developer Workaround Active
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <p className="text-sm">Access to this page is currently unrestricted for any logged-in user. For a production environment, you must secure this page by re-enabling the admin check as described in the accordion below.</p>
+            </CardContent>
+        </Card>
 
-        <Card>
+        <Card className="mt-8">
           <CardHeader>
             <CardTitle>User Management</CardTitle>
             <CardDescription>
@@ -242,8 +246,8 @@ export default function AdminPage() {
                     <p className="pl-4 mt-1 font-normal">The function will take the user's email as input, find their account, and attach a "custom claim" to it. For this app, the claim must be <code>{`{ admin: true }`}</code>.</p>
                   </li>
                   <li>
-                    <strong>Log In Again:</strong>
-                    <p className="pl-4 mt-1 font-normal">Once the claim is set, the user must log out and log back in. The app is already built to automatically detect this 'admin' claim and grant access to this dashboard.</p>
+                    <strong>Refresh Your Permissions:</strong>
+                    <p className="pl-4 mt-1 font-normal">Once the claim is set, return to this page and click the "Refresh Permissions" button. The app is already built to automatically detect this 'admin' claim and grant access.</p>
                   </li>
                 </ol>
                 <p className="text-xs pt-2">
