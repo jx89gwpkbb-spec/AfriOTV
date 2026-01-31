@@ -75,8 +75,12 @@ export default function SignupPage() {
           });
 
           router.push("/");
+          // It's possible navigation fails, so we ensure loading stops.
+          setIsProcessingRedirect(false);
+          setGoogleLoading(false);
         } else {
           setIsProcessingRedirect(false);
+          setGoogleLoading(false);
         }
       } catch (error: any) {
         if (error.code === 'auth/unauthorized-domain') {

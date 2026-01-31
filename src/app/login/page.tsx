@@ -81,9 +81,14 @@ export default function LoginPage() {
           }
           
           router.push(redirect || "/");
+          // It's possible navigation fails, so we ensure loading stops.
+          setIsProcessingRedirect(false);
+          setGoogleLoading(false);
+
         } else {
           // No redirect result, so we're not in a sign-in flow.
           setIsProcessingRedirect(false);
+          setGoogleLoading(false);
         }
       } catch (error: any) {
         if (error.code === 'auth/unauthorized-domain') {
