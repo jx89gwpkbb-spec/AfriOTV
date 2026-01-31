@@ -4,16 +4,51 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Play, Plus, Check, Star, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 import { contentData } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useWatchlist } from '@/contexts/WatchlistContext';
 import { ContentCarousel } from '@/components/content/ContentCarousel';
+import { findSimilarContent } from '@/ai/flows/similar-content';
+import type { Content } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ContentDetailPage({ params }: { params: { id: string } }) {
   const content = contentData.find((item) => item.id === params.id);
-  const { isInWatchlist, addToWatchlist, removeFromWatchlist, isLoading } = useWatchlist();
+  const { isInWatchlist, addToWatchlist, removeFromWatchlist, isLoading: isWatchlistLoading } = useWatchlist();
+  const { toast } = useToast();
+  
+  const [similarContent, setSimilarContent] = useState<Content[]>([]);
+  const [isSimilarLoading, setIsSimilarLoading] = useState(false);
+
+  useEffect(() => {
+    if (content) {
+      const fetchSimilar = async () => {
+        setIsSimilarLoading(true);
+        try {
+          const result = await findSimilarContent({ title: content.title });
+          const recommended = result.recommendations
+            .map(title => 
+              contentData.find(item => item.title.toLowerCase() === title.toLowerCase() && item.id !== content.id)
+            )
+            .filter((item): item is Content => !!item);
+          setSimilarContent(recommended.slice(0, 10));
+        } catch (error) {
+          console.error("Failed to fetch similar content:", error);
+          toast({
+            variant: "destructive",
+            title: "AI Error",
+            description: "Could not fetch AI recommendations.",
+          });
+        } finally {
+          setIsSimilarLoading(false);
+        }
+      };
+      fetchSimilar();
+    }
+  }, [content, toast]);
 
   if (!content) {
     notFound();
@@ -85,8 +120,8 @@ export default function ContentDetailPage({ params }: { params: { id: string } }
                   Play
                 </Button>
               </Link>
-              <Button size="lg" variant="secondary" onClick={handleWatchlistClick} disabled={isLoading}>
-                {isLoading ? (
+              <Button size="lg" variant="secondary" onClick={handleWatchlistClick} disabled={isWatchlistLoading}>
+                {isWatchlistLoading ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : onWatchlist ? (
                   <Check className="mr-2" />
@@ -110,6 +145,17 @@ export default function ContentDetailPage({ params }: { params: { id: string } }
 
         <div className="mt-16">
           <ContentCarousel title="You Might Also Like" content={relatedContent} />
+        </div>
+
+        <div className="mt-16">
+          {isSimilarLoading ? (
+            <div className="flex flex-col items-center justify-center text-center">
+              <h2 className="font-headline text-2xl md:text-3xl font-semibold mb-4">Finding Similar Content...</h2>
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : similarContent.length > 0 && (
+            <ContentCarousel title="AI-Powered: More Like This" content={similarContent} />
+          )}
         </div>
       </div>
     </>
