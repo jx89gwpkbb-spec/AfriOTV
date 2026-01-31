@@ -1,10 +1,14 @@
 'use client';
 
 import { useUser, useFirestore, useCollection, type UserProfile } from '@/firebase';
-import { Loader2, ShieldAlert, UserPlus, RefreshCw } from 'lucide-react';
+import { Loader2, ShieldAlert, UserPlus, RefreshCw, Film } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
 import { collection } from 'firebase/firestore';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,6 +35,40 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+
+const contentFormSchema = z.object({
+  title: z.string().min(1, { message: "Title is required." }),
+  type: z.enum(["movie", "tv"]),
+  description: z.string().min(10, { message: "Description must be at least 10 characters." }),
+  posterPath: z.string().url({ message: "Please enter a valid poster image URL." }),
+  coverPath: z.string().url({ message: "Please enter a valid cover image URL." }),
+  genres: z.string().min(1, { message: "Please enter at least one genre." }),
+  cast: z.string().min(1, { message: "Please enter at least one cast member." }),
+  rating: z.coerce.number().min(0).max(10, { message: "Rating must be between 0 and 10." }),
+  duration: z.string().min(1, { message: "Duration is required." }),
+  releaseYear: z.coerce.number().min(1888, { message: "Year must be after 1888." }).max(new Date().getFullYear() + 5, { message: "Year can't be too far in the future." }),
+  isTrending: z.boolean().default(false),
+});
+
+type ContentFormValues = z.infer<typeof contentFormSchema>;
 
 
 export default function AdminPage() {
@@ -54,6 +92,35 @@ export default function AdminPage() {
       router.push('/login?redirect=/admin');
     }
   }, [user, isLoading, router]);
+
+  const contentForm = useForm<ContentFormValues>({
+    resolver: zodResolver(contentFormSchema),
+    defaultValues: {
+      title: "",
+      type: "movie",
+      description: "",
+      posterPath: "https://picsum.photos/seed/10/500/750",
+      coverPath: "https://picsum.photos/seed/11/1280/720",
+      genres: "Action, Sci-Fi",
+      cast: "Chris Pratt, Zoe Saldana",
+      rating: 7.5,
+      duration: "2h 5min",
+      releaseYear: new Date().getFullYear(),
+      isTrending: false,
+    },
+  });
+
+  function onContentSubmit(data: ContentFormValues) {
+    // In a real application, you would send this data to your backend
+    // to create a new content item in your database.
+    console.log("New content data:", data);
+    toast({
+      title: "Content Added (Demo)",
+      description: `"${data.title}" would now be saved to the database.`,
+    });
+    // Optionally reset the form
+    // contentForm.reset(); 
+  }
 
   const getInitials = (name: string | null | undefined) => {
     if (!name) return "U";
@@ -180,6 +247,196 @@ export default function AdminPage() {
                 Make Admin
               </Button>
             </form>
+          </CardContent>
+        </Card>
+        
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle>Content Management</CardTitle>
+            <CardDescription>
+              Add a new movie or TV show to the catalog. Since this is a demo,
+              this form doesn't actually save data.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...contentForm}>
+              <form onSubmit={contentForm.handleSubmit(onContentSubmit)} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={contentForm.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Title</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. Galaxy Drifters" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={contentForm.control}
+                    name="type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Type</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select content type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="movie">Movie</SelectItem>
+                            <SelectItem value="tv">TV Show</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                    control={contentForm.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="A short synopsis of the content..." rows={4} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   <FormField
+                    control={contentForm.control}
+                    name="posterPath"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Poster Image URL</FormLabel>
+                        <FormControl>
+                          <Input placeholder="https://..." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                   <FormField
+                    control={contentForm.control}
+                    name="coverPath"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cover Image URL</FormLabel>
+                        <FormControl>
+                          <Input placeholder="https://..." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   <FormField
+                    control={contentForm.control}
+                    name="genres"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Genres</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Action, Sci-Fi, Adventure" {...field} />
+                        </FormControl>
+                        <FormDescription>Comma-separated values.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                   <FormField
+                    control={contentForm.control}
+                    name="cast"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Main Cast</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Chris Pratt, Zoe Saldana" {...field} />
+                        </FormControl>
+                         <FormDescription>Comma-separated values.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  <FormField
+                    control={contentForm.control}
+                    name="rating"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Rating</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.1" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                   <FormField
+                    control={contentForm.control}
+                    name="duration"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Duration</FormLabel>
+                        <FormControl>
+                          <Input placeholder="2h 15min" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                   <FormField
+                    control={contentForm.control}
+                    name="releaseYear"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Release Year</FormLabel>
+                        <FormControl>
+                          <Input type="number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={contentForm.control}
+                  name="isTrending"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">
+                          Mark as Trending
+                        </FormLabel>
+                        <FormDescription>
+                          Trending content is featured more prominently.
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit">
+                  <Film className="mr-2 h-4 w-4" />
+                  Add Content to Catalog
+                </Button>
+              </form>
+            </Form>
           </CardContent>
         </Card>
 
