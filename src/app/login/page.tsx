@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Clapperboard, Loader2 } from "lucide-react";
 import {
   signInWithEmailAndPassword,
-  signInWithPopup,
+  signInWithRedirect,
   GoogleAuthProvider,
   getAdditionalUserInfo,
+  getRedirectResult,
 } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { useAuth, useFirestore } from "@/firebase";
@@ -25,14 +26,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -48,10 +46,70 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setGoogleLoading] = useState(false);
+  const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
   const [showAuthDomainError, setShowAuthDomainError] = useState(false);
+
+  useEffect(() => {
+    const handleRedirectResult = async () => {
+      if (!auth || !firestore) return;
+      try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+          // User has successfully signed in via redirect.
+          const user = result.user;
+          const additionalInfo = getAdditionalUserInfo(result);
+
+          if (additionalInfo?.isNewUser) {
+            const userDocRef = doc(firestore, "users", user.uid);
+            const profileData = {
+              displayName: user.displayName,
+              email: user.email,
+              photoURL: user.photoURL,
+            };
+
+            setDoc(userDocRef, profileData, { merge: true }).catch(
+              async (serverError) => {
+                const permissionError = new FirestorePermissionError({
+                  path: userDocRef.path,
+                  operation: "create",
+                  requestResourceData: profileData,
+                });
+                errorEmitter.emit("permission-error", permissionError);
+              }
+            );
+          }
+          
+          router.push(redirect || "/");
+        } else {
+          // No redirect result, so we're not in a sign-in flow.
+          setIsProcessingRedirect(false);
+        }
+      } catch (error: any) {
+        let description = "An unexpected error occurred. Please try again.";
+        switch (error.code) {
+          case 'auth/unauthorized-domain':
+            setShowAuthDomainError(true);
+            break;
+          default:
+            description = `An error occurred: ${error.message} (Code: ${error.code})`;
+            break;
+        }
+        toast({
+          variant: "destructive",
+          title: "Google Login Failed",
+          description: description,
+        });
+        setIsProcessingRedirect(false);
+        setGoogleLoading(false);
+      }
+    };
+
+    handleRedirectResult();
+  }, [auth, firestore, router, redirect, toast]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if(!auth) return;
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
@@ -86,60 +144,19 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
+    if (!auth) return;
     setGoogleLoading(true);
-    try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      const additionalInfo = getAdditionalUserInfo(result);
-
-      // If it's a new user, create their profile document in Firestore.
-      if (additionalInfo?.isNewUser) {
-        const userDocRef = doc(firestore, "users", user.uid);
-        const profileData = {
-          displayName: user.displayName,
-          email: user.email,
-          photoURL: user.photoURL,
-        };
-
-        setDoc(userDocRef, profileData, { merge: true }).catch(
-          async (serverError) => {
-            const permissionError = new FirestorePermissionError({
-              path: userDocRef.path,
-              operation: "create",
-              requestResourceData: profileData,
-            });
-            errorEmitter.emit("permission-error", permissionError);
-          }
-        );
-      }
-      
-      router.push(redirect || "/");
-    } catch (error: any) {
-      let description = "An unexpected error occurred. Please try again.";
-      switch (error.code) {
-        case 'auth/popup-closed-by-user':
-          description = "The Google sign-in window was closed before completing. Please try again.";
-          break;
-        case 'auth/cancelled-popup-request':
-          description = "The sign-in process was cancelled. Please try again.";
-          break;
-        case 'auth/unauthorized-domain':
-          setShowAuthDomainError(true);
-          return;
-        default:
-          description = `An error occurred: ${error.message} (Code: ${error.code})`;
-          break;
-      }
-      toast({
-        variant: "destructive",
-        title: "Google Login Failed",
-        description: description,
-      });
-    } finally {
-      setGoogleLoading(false);
-    }
+    const provider = new GoogleAuthProvider();
+    await signInWithRedirect(auth, provider);
   };
+
+  if (isProcessingRedirect) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
