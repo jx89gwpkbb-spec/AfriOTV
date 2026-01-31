@@ -8,8 +8,10 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
+  getAdditionalUserInfo,
 } from "firebase/auth";
-import { useAuth } from "@/firebase";
+import { doc, setDoc } from "firebase/firestore";
+import { useAuth, useFirestore } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,9 +23,12 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 export default function LoginPage() {
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect");
@@ -72,7 +77,31 @@ export default function LoginPage() {
     setGoogleLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      const additionalInfo = getAdditionalUserInfo(result);
+
+      // If it's a new user, create their profile document in Firestore.
+      if (additionalInfo?.isNewUser) {
+        const userDocRef = doc(firestore, "users", user.uid);
+        const profileData = {
+          displayName: user.displayName,
+          email: user.email,
+          photoURL: user.photoURL,
+        };
+
+        setDoc(userDocRef, profileData, { merge: true }).catch(
+          async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+              path: userDocRef.path,
+              operation: "create",
+              requestResourceData: profileData,
+            });
+            errorEmitter.emit("permission-error", permissionError);
+          }
+        );
+      }
+      
       router.push(redirect || "/");
     } catch (error: any) {
       let description = "An unexpected error occurred. Please try again.";
