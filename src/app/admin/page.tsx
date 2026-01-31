@@ -1,7 +1,7 @@
 'use client';
 
 import { useUser } from '@/firebase';
-import { Loader2, ShieldAlert, UserPlus } from 'lucide-react';
+import { Loader2, ShieldAlert, UserPlus, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,7 @@ export default function AdminPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -55,6 +56,32 @@ export default function AdminPage() {
     setEmail('');
   };
 
+  const handleRefreshPermissions = async () => {
+    if (!user) {
+      toast({
+        variant: 'destructive',
+        title: 'Not logged in',
+        description: 'You must be logged in to refresh permissions.',
+      });
+      return;
+    }
+    setIsRefreshing(true);
+    try {
+      // This forces the client to get a new ID token from Firebase.
+      await user.getIdTokenResult(true);
+      // Reload the page to apply the new claims.
+      window.location.reload();
+    } catch (error) {
+      console.error("Error refreshing permissions:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Refresh Failed',
+        description: 'Could not refresh permissions. Please try logging out and back in.',
+      });
+      setIsRefreshing(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -71,11 +98,17 @@ export default function AdminPage() {
           <h1 className="font-headline text-4xl md:text-5xl font-bold mb-4">
             Access Denied
           </h1>
-          <p className="text-muted-foreground">
-            You do not have the necessary permissions to view this page. To
-            become an admin, you must be granted administrator privileges in
-            your Firebase project.
+          <p className="text-muted-foreground mb-6">
+            You do not have the necessary permissions to view this page. If you have just been granted admin rights, you may need to refresh your session.
           </p>
+          <Button onClick={handleRefreshPermissions} disabled={isRefreshing}>
+            {isRefreshing ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="mr-2 h-4 w-4" />
+            )}
+            Refresh Permissions
+          </Button>
         </div>
       </div>
     );
