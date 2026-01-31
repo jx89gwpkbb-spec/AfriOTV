@@ -23,6 +23,17 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 
@@ -37,6 +48,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setGoogleLoading] = useState(false);
+  const [showAuthDomainError, setShowAuthDomainError] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,8 +125,8 @@ export default function LoginPage() {
           description = "The sign-in process was cancelled. Please try again.";
           break;
         case 'auth/unauthorized-domain':
-          description = "This app's domain is not authorized. Go to Firebase Console > Authentication > Settings > Authorized domains, and add both `localhost` and `studio-2095727132-b9e55.firebaseapp.com` to the list.";
-          break;
+          setShowAuthDomainError(true);
+          return;
         default:
           description = `An error occurred: ${error.message} (Code: ${error.code})`;
           break;
@@ -131,6 +143,30 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
+      <AlertDialog open={showAuthDomainError} onOpenChange={setShowAuthDomainError}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Configuration Required: Authorize Domain</AlertDialogTitle>
+            <AlertDialogDescription>
+              This is a one-time security setup in your Firebase project. To enable Google Sign-In, you must tell Firebase to trust this application's domain.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="text-sm space-y-4">
+            <p>Please follow these steps exactly:</p>
+            <ol className="list-decimal list-inside space-y-2 bg-muted p-4 rounded-md">
+              <li>Go to the <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="text-primary underline">Firebase Console</a> and select your project: <strong>studio-2095727132-b9e55</strong>.</li>
+              <li>Navigate to <strong>Authentication &gt; Settings &gt; Authorized domains</strong>.</li>
+              <li>Click <strong>"Add domain"</strong> and enter: <code className="bg-background px-1 py-0.5 rounded">localhost</code></li>
+              <li>Click <strong>"Add domain"</strong> again and enter: <code className="bg-background px-1 py-0.5 rounded">studio-2095727132-b9e55.firebaseapp.com</code></li>
+            </ol>
+            <p>After adding both domains, wait a minute, then close this dialog and try signing in again.</p>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Close</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Card className="mx-auto max-w-sm">
         <CardHeader>
           <div className="flex justify-center mb-4">
