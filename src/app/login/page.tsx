@@ -112,6 +112,9 @@ export default function LoginPage() {
         case 'auth/cancelled-popup-request':
           description = "The sign-in process was cancelled. Please try again.";
           break;
+        case 'auth/unauthorized-domain':
+          description = "This app's domain is not authorized. Go to Firebase Console > Authentication > Settings > Authorized domains, and add both `localhost` and `studio-2095727132-b9e55.firebaseapp.com` to the list.";
+          break;
         default:
           description = `An error occurred: ${error.message} (Code: ${error.code})`;
           break;
