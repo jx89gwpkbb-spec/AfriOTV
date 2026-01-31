@@ -144,7 +144,7 @@ export default function SignupPage() {
       <Card className="mx-auto max-w-sm">
         <CardHeader>
           <div className="flex justify-center mb-4">
-            <Clapperboard className="h-8 w-8 text-accent" />
+            <Clapperboard className="h-8 w-8 text-accent drop-shadow-[0_0_3px_hsl(var(--accent))]" strokeWidth={2.5} />
           </div>
           <CardTitle className="text-2xl font-headline text-center">
             Join AfriOTV

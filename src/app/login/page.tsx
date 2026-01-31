@@ -48,6 +48,12 @@ export default function LoginPage() {
         case 'auth/network-request-failed':
           description = "A network error occurred. Please check your internet connection.";
           break;
+        case 'auth/user-not-found':
+          description = "No account was found with that email address. Please sign up first.";
+          break;
+        case 'auth/wrong-password':
+          description = "The password you entered is incorrect. Please try again.";
+          break;
         default:
           description = `An error occurred: ${error.message} (Code: ${error.code})`;
           break;
@@ -96,7 +102,7 @@ export default function LoginPage() {
       <Card className="mx-auto max-w-sm">
         <CardHeader>
           <div className="flex justify-center mb-4">
-            <Clapperboard className="h-8 w-8 text-accent" />
+            <Clapperboard className="h-8 w-8 text-accent drop-shadow-[0_0_3px_hsl(var(--accent))]" strokeWidth={2.5} />
           </div>
           <CardTitle className="text-2xl font-headline text-center">
             Login to AfriOTV
