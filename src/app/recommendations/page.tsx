@@ -48,7 +48,10 @@ export default function RecommendationsPage() {
     setIsLoading(true);
     setRecommendations([]);
     try {
-      const result = await generateRecommendations(data);
+      const result = await generateRecommendations({
+        ...data,
+        viewingHistory: data.viewingHistory.split(',').map(s => s.trim()),
+      });
       const recommendedContent = result.recommendations
         .map(title => 
           contentData.find(item => item.title.toLowerCase() === title.toLowerCase())
