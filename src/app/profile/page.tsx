@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function ProfilePage() {
   const { user, profile, claims, isLoading: isUserLoading } = useUser();
@@ -22,13 +23,16 @@ export default function ProfilePage() {
   const router = useRouter();
 
   const [displayName, setDisplayName] = useState("");
+  const [photoURL, setPhotoURL] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (profile) {
       setDisplayName(profile.displayName || "");
+      setPhotoURL(profile.photoURL || user?.photoURL || "");
     } else if (user) {
       setDisplayName(user.displayName || "");
+      setPhotoURL(user.photoURL || "");
     }
   }, [profile, user]);
   
@@ -37,6 +41,15 @@ export default function ProfilePage() {
       router.push('/login');
     }
   }, [isUserLoading, user, router]);
+
+  const getInitials = (name: string | null | undefined) => {
+    if (!name) return "U";
+    const names = name.split(' ');
+    if (names.length > 1) {
+      return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+    }
+    return name[0].toUpperCase();
+  }
 
   if (isUserLoading || !user || !firestore) {
     return (
@@ -52,8 +65,8 @@ export default function ProfilePage() {
     
     try {
       // 1. Update Firebase Auth profile
-      if (user.displayName !== displayName) {
-          await updateProfile(user, { displayName });
+      if (user.displayName !== displayName || user.photoURL !== photoURL) {
+          await updateProfile(user, { displayName, photoURL });
       }
 
       // 2. Update Firestore document
@@ -61,7 +74,7 @@ export default function ProfilePage() {
       const profileData = {
           displayName: displayName,
           email: user.email,
-          photoURL: user.photoURL,
+          photoURL: photoURL,
       };
 
       setDoc(userDocRef, profileData, { merge: true })
@@ -100,10 +113,26 @@ export default function ProfilePage() {
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
           <CardTitle>Profile Information</CardTitle>
-          <CardDescription>Update your display name.</CardDescription>
+          <CardDescription>Update your display name and profile picture.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleProfileUpdate} className="space-y-4">
+             <div className="flex items-center gap-4">
+              <Avatar className="h-20 w-20">
+                <AvatarImage src={photoURL || undefined} alt={displayName} />
+                <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
+              </Avatar>
+              <div className="w-full space-y-2">
+                <Label htmlFor="photoURL">Profile Picture URL</Label>
+                <Input
+                  id="photoURL"
+                  type="url"
+                  value={photoURL}
+                  onChange={(e) => setPhotoURL(e.target.value)}
+                  placeholder="https://example.com/image.png"
+                />
+              </div>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="displayName">Display Name</Label>
               <Input
