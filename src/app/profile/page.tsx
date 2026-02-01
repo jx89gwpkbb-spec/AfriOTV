@@ -85,81 +85,101 @@ export default function ProfilePage() {
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSaving(true);
-    setUploadProgress(null);
+    let hasChanges = false;
 
-    let newPhotoURL = photoURL;
-
-    try {
-        if (imageFile) {
-            const storageRef = ref(storage, `profile_pictures/${user.uid}`);
-            const uploadTask = uploadBytesResumable(storageRef, imageFile);
-
-            await new Promise<void>((resolve, reject) => {
-                uploadTask.on('state_changed',
-                    (snapshot) => {
-                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                        setUploadProgress(progress);
-                    },
-                    (error) => {
-                        console.error("Upload failed:", error);
-                        toast({
-                            variant: "destructive",
-                            title: "Upload Failed",
-                            description: "Could not upload your new profile picture. Please try again.",
-                        });
-                        reject(error);
-                    },
-                    async () => {
-                        try {
-                            newPhotoURL = await getDownloadURL(uploadTask.snapshot.ref);
-                            resolve();
-                        } catch (error) {
-                           reject(error);
-                        }
-                    }
-                );
-            });
-        }
-
-        if (user.displayName !== displayName || user.photoURL !== newPhotoURL) {
-            await updateProfile(user, { displayName, photoURL: newPhotoURL });
-        }
-
+    // --- Update Display Name ---
+    if (user.displayName !== displayName) {
+      hasChanges = true;
+      setIsSaving(true);
+      try {
+        await updateProfile(user, { displayName });
         const userDocRef = doc(firestore, "users", user.uid);
-        const profileData = {
-            displayName: displayName,
-            email: user.email,
-            photoURL: newPhotoURL,
-        };
-
-        setDoc(userDocRef, profileData, { merge: true })
-            .then(() => {
-                toast({
-                    title: "Profile Updated",
-                    description: "Your profile has been updated successfully.",
-                });
-                setImageFile(null);
-                setImagePreview(null);
-                setPhotoURL(newPhotoURL);
-            })
-            .catch((err) => {
-               const permissionError = new FirestorePermissionError({
-                  path: userDocRef.path,
-                  operation: 'update',
-                  requestResourceData: profileData
-                });
-                errorEmitter.emit('permission-error', permissionError);
-            });
-    } catch(error: any) {
+        await setDoc(userDocRef, { displayName }, { merge: true })
+          .catch((err) => {
+              const permissionError = new FirestorePermissionError({
+                path: userDocRef.path,
+                operation: 'update',
+                requestResourceData: { displayName }
+              });
+              errorEmitter.emit('permission-error', permissionError);
+              throw err;
+          });
+        toast({ title: "Display Name Updated" });
+      } catch (error: any) {
         toast({
-            variant: "destructive",
-            title: "Error",
-            description: error.message || "An unexpected error occurred while updating your profile.",
+          variant: "destructive",
+          title: "Error Updating Name",
+          description: error.message || "An unexpected error occurred.",
         });
-    } finally {
-      setIsSaving(false);
-      setUploadProgress(null);
+      } finally {
+        setIsSaving(false);
+      }
+    }
+
+    // --- Handle Image Upload ---
+    if (imageFile) {
+      hasChanges = true;
+      setUploadProgress(0);
+      const storageRef = ref(storage, `profile_pictures/${user.uid}`);
+      const uploadTask = uploadBytesResumable(storageRef, imageFile);
+      const fileToUpload = imageFile;
+      setImageFile(null); // Prevent re-upload
+
+      uploadTask.on('state_changed',
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(progress);
+        },
+        (error) => {
+          console.error("Upload failed:", error);
+          toast({
+            variant: "destructive",
+            title: "Upload Failed",
+            description: "Could not upload your new profile picture.",
+          });
+          setUploadProgress(null);
+          setImageFile(fileToUpload); // Restore for retry
+        },
+        async () => {
+          try {
+            const newPhotoURL = await getDownloadURL(uploadTask.snapshot.ref);
+            await updateProfile(user, { photoURL: newPhotoURL });
+            const userDocRef = doc(firestore, "users", user.uid);
+            await setDoc(userDocRef, { photoURL: newPhotoURL }, { merge: true })
+              .catch((err) => {
+                  const permissionError = new FirestorePermissionError({
+                      path: userDocRef.path,
+                      operation: 'update',
+                      requestResourceData: { photoURL: newPhotoURL }
+                  });
+                  errorEmitter.emit('permission-error', permissionError);
+                  throw err;
+              });
+
+            setPhotoURL(newPhotoURL);
+            setImagePreview(null);
+            setUploadProgress(null);
+            toast({
+              title: "Profile Picture Updated",
+              description: "Your new picture has been saved.",
+            });
+          } catch (error: any) {
+            toast({
+              variant: "destructive",
+              title: "Save Failed",
+              description: "Could not save the new profile picture URL.",
+            });
+            setUploadProgress(null);
+            setImageFile(fileToUpload);
+          }
+        }
+      );
+    }
+
+    if (!hasChanges) {
+      toast({
+        description: "You haven't made any changes.",
+      });
     }
   };
   
@@ -219,9 +239,9 @@ export default function ProfilePage() {
                 disabled
               />
             </div>
-            <Button type="submit" disabled={isSaving}>
+            <Button type="submit" disabled={isSaving || uploadProgress !== null}>
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Changes
+              {uploadProgress !== null ? 'Uploading...' : 'Save Changes'}
             </Button>
           </form>
         </CardContent>
