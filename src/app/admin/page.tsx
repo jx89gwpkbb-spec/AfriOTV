@@ -1,7 +1,7 @@
 'use client';
 
 import { useUser, useFirestore, useCollection, type UserProfile } from '@/firebase';
-import { Loader2, ShieldAlert, UserPlus, RefreshCw, Film } from 'lucide-react';
+import { Loader2, ShieldX, UserPlus, RefreshCw, Film } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -74,18 +74,17 @@ type ContentFormValues = z.infer<typeof contentFormSchema>;
 
 
 export default function AdminPage() {
-  const { user, isLoading } = useUser();
+  const { user, claims, isLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const firestore = useFirestore();
 
-  // NOTE: The admin check has been removed for development purposes.
   const usersCollectionRef = useMemo(() => {
-    if (!firestore) return null;
+    if (!firestore || !claims?.admin) return null;
     return collection(firestore, 'users');
-  }, [firestore]);
+  }, [firestore, claims]);
 
   const contentCollectionRef = useMemo(() => {
     if (!firestore) return null;
@@ -96,7 +95,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!isLoading && !user) {
-      router.push('/login?redirect=/admin');
+      router.push('/admin/login');
     }
   }, [user, isLoading, router]);
 
@@ -172,8 +171,6 @@ export default function AdminPage() {
       return;
     }
 
-    // In a real application, this would call a secure backend function.
-    // For this demo, we will just show a toast.
     toast({
       title: 'Admin Promotion (Demo)',
       description: `In a real app, you would now call a backend function to set a custom claim for ${email}. You must use the Firebase Admin SDK to do this securely.`,
@@ -192,9 +189,7 @@ export default function AdminPage() {
     }
     setIsRefreshing(true);
     try {
-      // This forces the client to get a new ID token from Firebase.
       await user.getIdTokenResult(true);
-      // Reload the page to apply the new claims.
       window.location.reload();
     } catch (error) {
       console.error("Error refreshing permissions:", error);
@@ -215,9 +210,27 @@ export default function AdminPage() {
     );
   }
 
-  // NOTE: The admin check has been removed for development purposes.
-  // Any logged-in user can now see this page.
-  // In a production app, you should re-enable the `!claims?.admin` check.
+  if (!claims?.admin) {
+    return (
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 flex flex-col items-center">
+            <div className="w-full max-w-2xl text-center">
+                <Card className="border-destructive/50 bg-destructive/10 text-destructive-foreground">
+                    <CardHeader>
+                        <CardTitle className="flex items-center justify-center gap-2">
+                            <ShieldX className="h-6 w-6 text-destructive" />
+                            Access Denied
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p>You do not have the necessary permissions to view this page. This area is for administrators only.</p>
+                        <p className="mt-4 text-sm">If you are an administrator, please ensure you have logged in with the correct account. If you believe this is an error, contact support.</p>
+                        <Button onClick={() => router.push('/')} variant="destructive" className="mt-6">Go to Homepage</Button>
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+    );
+  }
 
 
   return (
@@ -240,18 +253,6 @@ export default function AdminPage() {
         <p className="text-lg mb-8 text-muted-foreground">
           Welcome! This is where you'll manage the application.
         </p>
-        
-        <Card className="border-destructive/50 bg-destructive/10 text-destructive-foreground">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <ShieldAlert className="h-5 w-5 text-destructive" />
-                    Developer Workaround Active
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                <p className="text-sm">Access to this page is currently unrestricted for any logged-in user. For a production environment, you must secure this page by re-enabling the admin check as described in the accordion below.</p>
-            </CardContent>
-        </Card>
 
         <Card className="mt-8">
           <CardHeader>
