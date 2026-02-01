@@ -1,30 +1,38 @@
 "use client";
 
-import { useUser, useFirestore } from "@/firebase";
+import { useUser, useFirestore, useStorage } from "@/firebase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { doc, setDoc } from "firebase/firestore";
 import { updateProfile } from "firebase/auth";
-import { Loader2 } from "lucide-react";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { Loader2, Camera } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
 
 export default function ProfilePage() {
   const { user, profile, claims, isLoading: isUserLoading } = useUser();
   const firestore = useFirestore();
+  const storage = useStorage();
   const { toast } = useToast();
   const router = useRouter();
 
   const [displayName, setDisplayName] = useState("");
   const [photoURL, setPhotoURL] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (profile) {
@@ -42,6 +50,22 @@ export default function ProfilePage() {
     }
   }, [isUserLoading, user, router]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+            toast({
+                variant: 'destructive',
+                title: 'Image too large',
+                description: 'Please select an image smaller than 5MB.',
+            });
+            return;
+        }
+        setImageFile(file);
+        setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
   const getInitials = (name: string | null | undefined) => {
     if (!name) return "U";
     const names = name.split(' ');
@@ -51,7 +75,7 @@ export default function ProfilePage() {
     return name[0].toUpperCase();
   }
 
-  if (isUserLoading || !user || !firestore) {
+  if (isUserLoading || !user || !firestore || !storage) {
     return (
       <div className="flex justify-center items-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -62,44 +86,80 @@ export default function ProfilePage() {
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    
+    setUploadProgress(null);
+
+    let newPhotoURL = photoURL;
+
     try {
-      // 1. Update Firebase Auth profile
-      if (user.displayName !== displayName || user.photoURL !== photoURL) {
-          await updateProfile(user, { displayName, photoURL });
-      }
+        if (imageFile) {
+            const storageRef = ref(storage, `profile_pictures/${user.uid}`);
+            const uploadTask = uploadBytesResumable(storageRef, imageFile);
 
-      // 2. Update Firestore document
-      const userDocRef = doc(firestore, "users", user.uid);
-      const profileData = {
-          displayName: displayName,
-          email: user.email,
-          photoURL: photoURL,
-      };
+            await new Promise<void>((resolve, reject) => {
+                uploadTask.on('state_changed',
+                    (snapshot) => {
+                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                        setUploadProgress(progress);
+                    },
+                    (error) => {
+                        console.error("Upload failed:", error);
+                        toast({
+                            variant: "destructive",
+                            title: "Upload Failed",
+                            description: "Could not upload your new profile picture. Please try again.",
+                        });
+                        reject(error);
+                    },
+                    async () => {
+                        try {
+                            newPhotoURL = await getDownloadURL(uploadTask.snapshot.ref);
+                            resolve();
+                        } catch (error) {
+                           reject(error);
+                        }
+                    }
+                );
+            });
+        }
 
-      setDoc(userDocRef, profileData, { merge: true })
-        .then(() => {
-            toast({
-                title: "Profile Updated",
-                description: "Your profile has been updated successfully.",
+        if (user.displayName !== displayName || user.photoURL !== newPhotoURL) {
+            await updateProfile(user, { displayName, photoURL: newPhotoURL });
+        }
+
+        const userDocRef = doc(firestore, "users", user.uid);
+        const profileData = {
+            displayName: displayName,
+            email: user.email,
+            photoURL: newPhotoURL,
+        };
+
+        setDoc(userDocRef, profileData, { merge: true })
+            .then(() => {
+                toast({
+                    title: "Profile Updated",
+                    description: "Your profile has been updated successfully.",
+                });
+                setImageFile(null);
+                setImagePreview(null);
+                setPhotoURL(newPhotoURL);
+            })
+            .catch((err) => {
+               const permissionError = new FirestorePermissionError({
+                  path: userDocRef.path,
+                  operation: 'update',
+                  requestResourceData: profileData
+                });
+                errorEmitter.emit('permission-error', permissionError);
             });
-        })
-        .catch((err) => {
-           const permissionError = new FirestorePermissionError({
-              path: userDocRef.path,
-              operation: 'update',
-              requestResourceData: profileData
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        });
-    } catch(authError: any) {
+    } catch(error: any) {
         toast({
             variant: "destructive",
-            title: "Authentication Error",
-            description: authError.message,
+            title: "Error",
+            description: error.message || "An unexpected error occurred while updating your profile.",
         });
     } finally {
       setIsSaving(false);
+      setUploadProgress(null);
     }
   };
   
@@ -116,31 +176,40 @@ export default function ProfilePage() {
           <CardDescription>Update your display name and profile picture.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleProfileUpdate} className="space-y-4">
-             <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={photoURL || undefined} alt={displayName} />
-                <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
-              </Avatar>
-              <div className="w-full space-y-2">
-                <Label htmlFor="photoURL">Profile Picture URL</Label>
-                <Input
-                  id="photoURL"
-                  type="url"
-                  value={photoURL}
-                  onChange={(e) => setPhotoURL(e.target.value)}
-                  placeholder="https://example.com/image.png"
-                />
-              </div>
+          <form onSubmit={handleProfileUpdate} className="space-y-6">
+            <div className="flex items-center gap-6">
+                <div className="relative group">
+                    <Avatar className="h-24 w-24">
+                        <AvatarImage src={imagePreview || photoURL || undefined} alt={displayName} />
+                        <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
+                    </Avatar>
+                    <button 
+                        type="button" 
+                        onClick={() => fileInputRef.current?.click()}
+                        className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                        aria-label="Change profile picture"
+                    >
+                        <Camera className="h-8 w-8 text-white" />
+                    </button>
+                </div>
+                <div className="w-full space-y-2">
+                    <Label htmlFor="displayName">Display Name</Label>
+                    <Input
+                        id="displayName"
+                        value={displayName}
+                        onChange={(e) => setDisplayName(e.target.value)}
+                    />
+                    <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/png, image/jpeg, image/gif" className="hidden" />
+                </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="displayName">Display Name</Label>
-              <Input
-                id="displayName"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-              />
-            </div>
+            
+            {uploadProgress !== null && (
+                <div className="space-y-2">
+                    <Label>Upload Progress</Label>
+                    <Progress value={uploadProgress} />
+                </div>
+            )}
+           
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
