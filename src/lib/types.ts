@@ -18,3 +18,16 @@ export interface UserProfile {
   email: string;
   photoURL?: string;
 }
+
+export type Review = {
+  id: string;
+  userId: string;
+  displayName: string;
+  photoURL?: string;
+  rating: number;
+  comment: string;
+  createdAt: {
+    seconds: number;
+    nanoseconds: number;
+  };
+};

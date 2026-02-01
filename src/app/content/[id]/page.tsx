@@ -3,22 +3,45 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Play, Plus, Check, Star, Loader2 } from 'lucide-react';
+import { Play, Plus, Check, Star, Loader2, MessageSquare } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
+import { collection, query, orderBy } from 'firebase/firestore';
 
 import { useContent } from '@/contexts/ContentContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useWatchlist } from '@/contexts/WatchlistContext';
 import { ContentCarousel } from '@/components/content/ContentCarousel';
+import { ReviewsSection } from '@/components/content/ReviewsSection';
 import { findSimilarContent } from '@/ai/flows/similar-content';
-import type { Content } from '@/lib/types';
+import type { Content, Review } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { useFirestore } from '@/firebase';
+import { useCollection } from '@/firebase/firestore/use-collection';
 
 export default function ContentDetailPage({ params }: { params: { id: string } }) {
   const { content: contentData, isLoading: isContentLoading } = useContent();
+  const firestore = useFirestore();
   
   const content = useMemo(() => contentData.find((item) => item.id === params.id), [contentData, params.id]);
+
+  const reviewsCollectionRef = useMemo(() => {
+    if (!firestore || !content) return null;
+    return query(collection(firestore, 'content', content.id, 'reviews'), orderBy('createdAt', 'desc'));
+  }, [firestore, content]);
+
+  const { data: reviews, isLoading: areReviewsLoading } = useCollection<Review>(reviewsCollectionRef);
+
+  const { averageRating, reviewCount } = useMemo(() => {
+    if (!reviews || reviews.length === 0) {
+      return { averageRating: content?.rating || 0, reviewCount: 0 };
+    }
+    const totalRating = reviews.reduce((acc, review) => acc + review.rating, 0);
+    return {
+      averageRating: totalRating / reviews.length,
+      reviewCount: reviews.length,
+    };
+  }, [reviews, content]);
 
   const { isInWatchlist, addToWatchlist, removeFromWatchlist, isLoading: isWatchlistLoading } = useWatchlist();
   const { toast } = useToast();
@@ -118,7 +141,8 @@ export default function ContentDetailPage({ params }: { params: { id: string } }
               <span>{content.duration}</span>
               <div className="flex items-center gap-1">
                 <Star className="w-4 h-4 text-accent fill-accent" />
-                <span>{content.rating.toFixed(1)}</span>
+                <span>{averageRating.toFixed(1)}</span>
+                <span className="text-xs">({reviewCount} reviews)</span>
               </div>
             </div>
           </div>
@@ -155,6 +179,10 @@ export default function ContentDetailPage({ params }: { params: { id: string } }
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="mt-16">
+          <ReviewsSection contentId={content.id} reviews={reviews || []} isLoading={areReviewsLoading} />
         </div>
 
         <div className="mt-16">

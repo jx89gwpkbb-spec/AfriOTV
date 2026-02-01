@@ -51,13 +51,47 @@
             "coverPath": { "type": "string", "format": "uri", "description": "URL for the cover/backdrop image." },
             "genres": { "type": "array", "items": { "type": "string" }, "description": "An array of genres." },
             "cast": { "type": "array", "items": { "type": "string" }, "description": "An array of main cast members." },
-            "rating": { "type": "number", "description": "The content's rating (e.g., out of 10)." },
+            "rating": { "type": "number", "description": "The content's original rating (e.g., from an external source)." },
             "duration": { "type": "string", "description": "The runtime or number of episodes." },
             "releaseYear": { "type": "number", "description": "The year the content was released." },
             "isTrending": { "type": "boolean", "description": "Whether the content is currently trending." },
             "createdAt": { "type": "string", "format": "date-time", "description": "The timestamp when the content was added." }
         },
         "required": ["title", "type", "description", "posterPath", "coverPath", "genres", "cast", "rating", "duration", "releaseYear", "createdAt"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "A user review and rating for a piece of content.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who wrote the review."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The display name of the user at the time of review."
+        },
+        "photoURL": {
+          "type": "string",
+          "format": "uri",
+          "description": "The profile photo URL of the user at the time of review."
+        },
+        "rating": {
+          "type": "number",
+          "description": "The star rating from 1 to 5."
+        },
+        "comment": {
+          "type": "string",
+          "description": "The text content of the review."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the review was submitted."
+        }
+      },
+      "required": ["userId", "displayName", "rating", "comment", "createdAt"]
     }
   },
   "auth": {
@@ -81,6 +115,12 @@
             "$ref": "#/entities/Content"
         },
         "description": "Stores all movie and TV show content available on the platform."
+    },
+    "/content/{contentId}/reviews/{reviewId}": {
+      "schema": {
+        "$ref": "#/entities/Review"
+      },
+      "description": "Stores user reviews for a specific piece of content."
     }
   }
 }
