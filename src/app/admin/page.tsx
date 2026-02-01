@@ -82,11 +82,10 @@ export default function AdminPage() {
   const firestore = useFirestore();
 
   const usersCollectionRef = useMemo(() => {
-    // Temporary workaround: Allow any logged-in user to see the user list.
-    // In production, you should revert this to: `if (!firestore || !claims?.admin) return null;`
-    if (!firestore || !user) return null;
+    // This now correctly checks for admin claims before attempting to fetch the user list.
+    if (!firestore || !claims?.admin) return null;
     return collection(firestore, 'users');
-  }, [firestore, user]);
+  }, [firestore, claims]);
 
   const contentCollectionRef = useMemo(() => {
     if (!firestore) return null;
@@ -489,7 +488,7 @@ export default function AdminPage() {
               <div className="flex justify-center items-center h-40">
                 <Loader2 className="h-8 w-8 animate-spin" />
               </div>
-            ) : (
+            ) : users ? (
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -499,7 +498,7 @@ export default function AdminPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users?.map(u => (
+                  {users.map(u => (
                     <TableRow key={u.id}>
                       <TableCell>
                         <Avatar className="h-8 w-8">
@@ -513,6 +512,10 @@ export default function AdminPage() {
                   ))}
                 </TableBody>
               </Table>
+            ) : (
+                <div className="text-center py-10 text-muted-foreground border border-dashed rounded-lg">
+                    <p>You must have administrator privileges to view the user list.</p>
+                </div>
             )}
           </CardContent>
         </Card>
