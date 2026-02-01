@@ -1,13 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useContent } from '@/contexts/ContentContext';
 import { Button } from '@/components/ui/button';
 import { useMemo } from 'react';
 
-export default function PlayPage({ params }: { params: { id: string } }) {
+export default function PlayPage() {
+  const params = useParams<{ id: string }>();
   const { content: contentData, isLoading } = useContent();
   const content = useMemo(() => contentData.find((item) => item.id === params.id), [contentData, params.id]);
 

@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { Play, Plus, Check, Star, Loader2, MessageSquare } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { collection, query, orderBy } from 'firebase/firestore';
@@ -19,7 +19,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore } from '@/firebase';
 import { useCollection } from '@/firebase/firestore/use-collection';
 
-export default function ContentDetailPage({ params }: { params: { id: string } }) {
+export default function ContentDetailPage() {
+  const params = useParams<{ id: string }>();
   const { content: contentData, isLoading: isContentLoading } = useContent();
   const firestore = useFirestore();
   
