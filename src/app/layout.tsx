@@ -34,19 +34,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className="dark">
       <head />
       <body className={cn('font-body antialiased min-h-screen flex flex-col', playfair.variable, ptSans.variable)} suppressHydrationWarning>
-        <FirebaseClientProvider>
-          <ContentProvider>
-            <WatchlistProvider>
-              <Header />
-              <main className="flex-grow">{children}</main>
-              <Footer />
-            </WatchlistProvider>
-          </ContentProvider>
-        </FirebaseClientProvider>
-        <Toaster />
+          <FirebaseClientProvider>
+            <ContentProvider>
+              <WatchlistProvider>
+                <Header />
+                <main className="flex-grow">{children}</main>
+                <Footer />
+              </WatchlistProvider>
+            </ContentProvider>
+          </FirebaseClientProvider>
+          <Toaster />
       </body>
     </html>
   );
