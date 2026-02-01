@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ContentGrid } from '@/components/shared/ContentGrid';
-import { contentData } from '@/lib/data';
+import { useContent } from '@/contexts/ContentContext';
 import type { Content } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -35,6 +35,7 @@ export default function RecommendationsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<Content[]>([]);
   const { toast } = useToast();
+  const { content: contentData } = useContent();
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),

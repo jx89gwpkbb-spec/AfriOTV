@@ -4,10 +4,12 @@ import { useUser, useFirestore, useCollection, type UserProfile } from '@/fireba
 import { Loader2, ShieldAlert, UserPlus, RefreshCw, Film } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
-import { collection } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -85,6 +87,11 @@ export default function AdminPage() {
     return collection(firestore, 'users');
   }, [firestore]);
 
+  const contentCollectionRef = useMemo(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'content');
+  }, [firestore]);
+
   const { data: users, isLoading: isLoadingUsers } = useCollection<(UserProfile & { id: string })>(usersCollectionRef);
 
   useEffect(() => {
@@ -111,15 +118,38 @@ export default function AdminPage() {
   });
 
   function onContentSubmit(data: ContentFormValues) {
-    // In a real application, you would send this data to your backend
-    // to create a new content item in your database.
-    console.log("New content data:", data);
-    toast({
-      title: "Content Added (Demo)",
-      description: `"${data.title}" would now be saved to the database.`,
-    });
-    // Optionally reset the form
-    // contentForm.reset(); 
+    if (!contentCollectionRef) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Firestore is not available. Cannot add content.',
+      });
+      return;
+    }
+
+    const newContentData = {
+      ...data,
+      genres: data.genres.split(',').map(g => g.trim()),
+      cast: data.cast.split(',').map(c => c.trim()),
+      createdAt: serverTimestamp(),
+    };
+
+    addDoc(contentCollectionRef, newContentData)
+      .then((docRef) => {
+        toast({
+          title: "Content Added",
+          description: `"${data.title}" has been successfully added to the catalog.`,
+        });
+        contentForm.reset();
+      })
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: contentCollectionRef.path,
+          operation: 'create',
+          requestResourceData: newContentData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
   }
 
   const getInitials = (name: string | null | undefined) => {
@@ -254,8 +284,7 @@ export default function AdminPage() {
           <CardHeader>
             <CardTitle>Content Management</CardTitle>
             <CardDescription>
-              Add a new movie or TV show to the catalog. Since this is a demo,
-              this form doesn't actually save data.
+              Add a new movie or TV show to the catalog.
             </CardDescription>
           </CardHeader>
           <CardContent>

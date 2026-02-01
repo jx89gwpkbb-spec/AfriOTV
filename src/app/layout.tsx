@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 import './globals.css';
 import { WatchlistProvider } from '@/contexts/WatchlistContext';
+import { ContentProvider } from '@/contexts/ContentContext';
 import { Playfair_Display, PT_Sans } from 'next/font/google';
 
 const playfair = Playfair_Display({
@@ -37,11 +38,13 @@ export default function RootLayout({
       <head />
       <body className={cn('font-body antialiased min-h-screen flex flex-col', playfair.variable, ptSans.variable)} suppressHydrationWarning>
         <FirebaseClientProvider>
-          <WatchlistProvider>
-            <Header />
-            <main className="flex-grow">{children}</main>
-            <Footer />
-          </WatchlistProvider>
+          <ContentProvider>
+            <WatchlistProvider>
+              <Header />
+              <main className="flex-grow">{children}</main>
+              <Footer />
+            </WatchlistProvider>
+          </ContentProvider>
         </FirebaseClientProvider>
         <Toaster />
       </body>

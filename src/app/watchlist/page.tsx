@@ -1,19 +1,24 @@
 "use client";
 
 import { useWatchlist } from '@/contexts/WatchlistContext';
-import { contentData } from '@/lib/data';
+import { useContent } from '@/contexts/ContentContext';
 import { ContentGrid } from '@/components/shared/ContentGrid';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/firebase';
 import { Loader2 } from 'lucide-react';
+import { useMemo } from 'react';
 
 export default function WatchlistPage() {
   const { user, isLoading: isUserLoading } = useUser();
   const { watchlist, isLoading: isWatchlistLoading } = useWatchlist();
-  const watchlistItems = contentData.filter(item => watchlist.includes(item.id));
+  const { content: contentData, isLoading: isContentLoading } = useContent();
+  
+  const watchlistItems = useMemo(() => {
+      return contentData.filter(item => watchlist.includes(item.id))
+  }, [contentData, watchlist]);
 
-  if (isUserLoading) {
+  if (isUserLoading || isContentLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />

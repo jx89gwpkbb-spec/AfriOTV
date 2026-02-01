@@ -1,11 +1,23 @@
+'use client';
+
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
-import { contentData } from '@/lib/data';
+import { ArrowLeft, Loader2 } from 'lucide-react';
+import { useContent } from '@/contexts/ContentContext';
 import { Button } from '@/components/ui/button';
+import { useMemo } from 'react';
 
 export default function PlayPage({ params }: { params: { id: string } }) {
-  const content = contentData.find((item) => item.id === params.id);
+  const { content: contentData, isLoading } = useContent();
+  const content = useMemo(() => contentData.find((item) => item.id === params.id), [contentData, params.id]);
+
+  if (isLoading) {
+    return (
+      <div className="bg-black w-full h-screen flex flex-col items-center justify-center relative">
+        <Loader2 className="h-8 w-8 animate-spin text-white" />
+      </div>
+    );
+  }
 
   if (!content) {
     notFound();

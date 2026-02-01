@@ -4,9 +4,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Play, Plus, Check, Star, Loader2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
-import { contentData } from '@/lib/data';
+import { useContent } from '@/contexts/ContentContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useWatchlist } from '@/contexts/WatchlistContext';
@@ -16,7 +16,10 @@ import type { Content } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
 export default function ContentDetailPage({ params }: { params: { id: string } }) {
-  const content = contentData.find((item) => item.id === params.id);
+  const { content: contentData, isLoading: isContentLoading } = useContent();
+  
+  const content = useMemo(() => contentData.find((item) => item.id === params.id), [contentData, params.id]);
+
   const { isInWatchlist, addToWatchlist, removeFromWatchlist, isLoading: isWatchlistLoading } = useWatchlist();
   const { toast } = useToast();
   
@@ -48,7 +51,22 @@ export default function ContentDetailPage({ params }: { params: { id: string } }
       };
       fetchSimilar();
     }
-  }, [content, toast]);
+  }, [content, contentData, toast]);
+
+  const relatedContent = useMemo(() => {
+    if (!content) return [];
+    return contentData.filter(
+      (item) => item.genres.some(g => content.genres.includes(g)) && item.id !== content.id
+    ).slice(0, 10);
+  }, [content, contentData]);
+
+  if (isContentLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   if (!content) {
     notFound();
@@ -63,10 +81,6 @@ export default function ContentDetailPage({ params }: { params: { id: string } }
       addToWatchlist(content.id);
     }
   };
-
-  const relatedContent = contentData.filter(
-    (item) => item.genres.some(g => content.genres.includes(g)) && item.id !== content.id
-  ).slice(0, 10);
 
   return (
     <>

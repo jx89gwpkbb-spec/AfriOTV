@@ -38,6 +38,26 @@
             }
         },
         "required": ["contentId", "addedAt"]
+    },
+    "Content": {
+        "title": "Content",
+        "description": "Represents a movie or TV show available on the platform.",
+        "type": "object",
+        "properties": {
+            "title": { "type": "string", "description": "The title of the content." },
+            "type": { "type": "string", "enum": ["movie", "tv"], "description": "The type of content." },
+            "description": { "type": "string", "description": "A brief synopsis of the content." },
+            "posterPath": { "type": "string", "format": "uri", "description": "URL for the poster image." },
+            "coverPath": { "type": "string", "format": "uri", "description": "URL for the cover/backdrop image." },
+            "genres": { "type": "array", "items": { "type": "string" }, "description": "An array of genres." },
+            "cast": { "type": "array", "items": { "type": "string" }, "description": "An array of main cast members." },
+            "rating": { "type": "number", "description": "The content's rating (e.g., out of 10)." },
+            "duration": { "type": "string", "description": "The runtime or number of episodes." },
+            "releaseYear": { "type": "number", "description": "The year the content was released." },
+            "isTrending": { "type": "boolean", "description": "Whether the content is currently trending." },
+            "createdAt": { "type": "string", "format": "date-time", "description": "The timestamp when the content was added." }
+        },
+        "required": ["title", "type", "description", "posterPath", "coverPath", "genres", "cast", "rating", "duration", "releaseYear", "createdAt"]
     }
   },
   "auth": {
@@ -55,6 +75,12 @@
             "$ref": "#/entities/WatchlistItem"
         },
         "description": "Stores the user's watchlist items."
+    },
+    "/content/{contentId}": {
+        "schema": {
+            "$ref": "#/entities/Content"
+        },
+        "description": "Stores all movie and TV show content available on the platform."
     }
   }
 }
