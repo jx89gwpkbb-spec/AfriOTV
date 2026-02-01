@@ -80,6 +80,7 @@ export default function PlayPage() {
             <video 
               className="w-full h-full"
               controls
+              autoPlay
               playsInline
               src={content.videoUrl}
               poster={content.coverPath}
