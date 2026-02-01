@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Loader2, ShieldCheck } from "lucide-react";
+import { ShieldCheck, Loader2 } from "lucide-react";
 import {
-  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signInWithRedirect,
   GoogleAuthProvider,
-  getAdditionalUserInfo,
   getRedirectResult,
+  updateProfile,
 } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { useAuth, useFirestore } from "@/firebase";
@@ -36,13 +36,14 @@ import {
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 
-export default function AdminLoginPage() {
+export default function AdminSignupPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setGoogleLoading] = useState(false);
   const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
@@ -54,37 +55,30 @@ export default function AdminLoginPage() {
       try {
         const result = await getRedirectResult(auth);
         if (result) {
-          // User has successfully signed in via redirect.
+          // User has successfully signed up via redirect.
           const user = result.user;
-          const additionalInfo = getAdditionalUserInfo(result);
 
-          if (additionalInfo?.isNewUser) {
-            const userDocRef = doc(firestore, "users", user.uid);
-            const profileData = {
-              displayName: user.displayName,
-              email: user.email,
-              photoURL: user.photoURL,
-            };
-
-            setDoc(userDocRef, profileData, { merge: true }).catch(
-              async (serverError) => {
-                const permissionError = new FirestorePermissionError({
-                  path: userDocRef.path,
-                  operation: "create",
-                  requestResourceData: profileData,
-                });
-                errorEmitter.emit("permission-error", permissionError);
-              }
-            );
-          }
+          const userDocRef = doc(firestore, "users", user.uid);
+          const profileData = {
+            displayName: user.displayName,
+            email: user.email,
+            photoURL: user.photoURL,
+          };
           
+          setDoc(userDocRef, profileData, { merge: true }).catch(async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+              path: userDocRef.path,
+              operation: 'create',
+              requestResourceData: profileData
+            });
+            errorEmitter.emit('permission-error', permissionError);
+          });
+
           router.push("/admin");
           // It's possible navigation fails, so we ensure loading stops.
           setIsProcessingRedirect(false);
           setGoogleLoading(false);
-
         } else {
-          // No redirect result, so we're not in a sign-in flow.
           setIsProcessingRedirect(false);
           setGoogleLoading(false);
         }
@@ -94,7 +88,7 @@ export default function AdminLoginPage() {
         } else {
             toast({
                 variant: "destructive",
-                title: "Google Login Failed",
+                title: "Google Signup Failed",
                 description: error.message || "An unexpected error occurred during redirect.",
             });
         }
@@ -106,27 +100,47 @@ export default function AdminLoginPage() {
     handleRedirectResult();
   }, [auth, firestore, router, toast]);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if(!auth) return;
+    if (!auth || !firestore) return;
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const user = userCredential.user;
+      await updateProfile(user, { displayName });
+
+      const userDocRef = doc(firestore, "users", user.uid);
+      const profileData = {
+        displayName: displayName,
+        email: user.email,
+        photoURL: user.photoURL,
+      };
+      
+      setDoc(userDocRef, profileData, { merge: true }).catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: userDocRef.path,
+          operation: 'create',
+          requestResourceData: profileData
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
+
       router.push("/admin");
     } catch (error: any) {
       let description = "An unexpected error occurred. Please try again.";
       switch (error.code) {
-        case 'auth/invalid-credential':
-          description = "The email or password you entered is incorrect. Please double-check and try again.";
+        case 'auth/email-already-in-use':
+          description = "This email address is already in use by another account.";
           break;
-        case 'auth/network-request-failed':
-          description = "A network error occurred. Please check your internet connection.";
+        case 'auth/weak-password':
+          description = "The password is too weak. Please choose a stronger password (at least 6 characters).";
           break;
-        case 'auth/user-not-found':
-          description = "No account was found with that email address.";
-          break;
-        case 'auth/wrong-password':
-          description = "The password you entered is incorrect. Please try again.";
+        case 'auth/invalid-email':
+          description = "The email address is not valid. Please check the format.";
           break;
         default:
           description = `An error occurred: ${error.message} (Code: ${error.code})`;
@@ -134,7 +148,7 @@ export default function AdminLoginPage() {
       }
       toast({
         variant: "destructive",
-        title: "Login Failed",
+        title: "Signup Failed",
         description: description,
       });
     } finally {
@@ -147,21 +161,21 @@ export default function AdminLoginPage() {
     setGoogleLoading(true);
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithRedirect(auth, provider);
+        await signInWithRedirect(auth, provider);
     } catch (error: any) {
-       if (error.code === 'auth/unauthorized-domain') {
-        setShowAuthDomainError(true);
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Google Login Failed",
-          description: error.message || "An unexpected error occurred.",
-        });
-      }
-      setGoogleLoading(false);
+        if (error.code === 'auth/unauthorized-domain') {
+            setShowAuthDomainError(true);
+        } else {
+            toast({
+                variant: "destructive",
+                title: "Google Signup Failed",
+                description: error.message || "An unexpected error occurred.",
+            });
+        }
+        setGoogleLoading(false);
     }
   };
-
+  
   if (isProcessingRedirect) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -172,7 +186,7 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <AlertDialog open={showAuthDomainError} onOpenChange={setShowAuthDomainError}>
+       <AlertDialog open={showAuthDomainError} onOpenChange={setShowAuthDomainError}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Configuration Required: Authorize Domain</AlertDialogTitle>
@@ -195,28 +209,39 @@ export default function AdminLoginPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
       <Card className="mx-auto max-w-sm">
         <CardHeader>
           <div className="flex justify-center mb-4">
             <ShieldCheck className="h-8 w-8 text-accent drop-shadow-[0_0_3px_hsl(var(--accent))]" strokeWidth={2.5} />
           </div>
           <CardTitle className="text-2xl font-headline text-center">
-            Admin Login
+            Create Admin Account
           </CardTitle>
           <CardDescription className="text-center">
-            Enter your credentials to access the dashboard.
+            Enter your information to create an admin account
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin}>
+          <form onSubmit={handleSignup}>
             <div className="grid gap-4">
+               <div className="grid gap-2">
+                <Label htmlFor="displayName">Display Name</Label>
+                <Input
+                  id="displayName"
+                  type="text"
+                  placeholder="John Doe"
+                  required
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  disabled={isLoading || isGoogleLoading}
+                />
+              </div>
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="admin@example.com"
+                  placeholder="m@example.com"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -236,7 +261,7 @@ export default function AdminLoginPage() {
               </div>
               <Button type="submit" className="w-full" disabled={isLoading || isGoogleLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Login as Admin
+                Create an account
               </Button>
             </div>
           </form>
@@ -259,20 +284,14 @@ export default function AdminLoginPage() {
             {isGoogleLoading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
-              <svg role="img" viewBox="0 0 24 24" className="mr-2 h-4 w-4"><path fill="currentColor" d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.1-1.05 1.05-2.58 2.6-5.5 2.6-4.25 0-7.75-3.5-7.75-7.75s3.5-7.75 7.75-7.75c2.38 0 3.88.94 4.8 1.88l2.53-2.53C18.3 1.19 15.8.02 12.48.02c-6.63 0-12 5.37-12 12s5.37 12 12 12c6.94 0 11.7-4.82 11.7-11.77 0-.79-.07-1.54-.2-2.31H12.48z"></path></svg>
+             <svg role="img" viewBox="0 0 24 24" className="mr-2 h-4 w-4"><path fill="currentColor" d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.1-1.05 1.05-2.58 2.6-5.5 2.6-4.25 0-7.75-3.5-7.75-7.75s3.5-7.75 7.75-7.75c2.38 0 3.88.94 4.8 1.88l2.53-2.53C18.3 1.19 15.8.02 12.48.02c-6.63 0-12 5.37-12 12s5.37 12 12 12c6.94 0 11.7-4.82 11.7-11.77 0-.79-.07-1.54-.2-2.31H12.48z"></path></svg>
             )}
-            Login with Google
+            Sign up with Google
           </Button>
-           <div className="mt-4 text-center text-sm">
-            Don't have an admin account?{" "}
-            <Link href="/admin/signup" className="underline">
-              Sign up
-            </Link>
-          </div>
-           <div className="mt-2 text-center text-sm">
-            Not an admin?{" "}
-            <Link href="/login" className="underline">
-              Go to user login
+          <div className="mt-4 text-center text-sm">
+            Already an admin?{" "}
+            <Link href="/admin/login" className="underline">
+              Login
             </Link>
           </div>
         </CardContent>
