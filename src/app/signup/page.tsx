@@ -294,6 +294,12 @@ export default function SignupPage() {
               Login
             </Link>
           </div>
+          <div className="mt-2 text-center text-sm">
+            Signing up as an admin?{" "}
+            <Link href="/admin/login" className="underline">
+              Go to Admin Login
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>
