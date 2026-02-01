@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound, useParams } from 'next/navigation';
-import { Play, Plus, Check, Star, Loader2, MessageSquare } from 'lucide-react';
+import { Play, Plus, Check, Star, Loader2, Wand2 } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { collection, query, orderBy } from 'firebase/firestore';
 
@@ -49,9 +49,10 @@ export default function ContentDetailPage() {
   
   const [similarContent, setSimilarContent] = useState<Content[]>([]);
   const [isSimilarLoading, setIsSimilarLoading] = useState(false);
+  const [aiSimilarRequested, setAiSimilarRequested] = useState(false);
 
   useEffect(() => {
-    if (content) {
+    if (content && aiSimilarRequested) {
       const fetchSimilar = async () => {
         setIsSimilarLoading(true);
         try {
@@ -64,18 +65,22 @@ export default function ContentDetailPage() {
           setSimilarContent(recommended.slice(0, 10));
         } catch (error) {
           console.error("Failed to fetch similar content:", error);
+           const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
           toast({
             variant: "destructive",
             title: "AI Error",
-            description: "Could not fetch AI recommendations.",
+            description: errorMessage.includes('429') 
+              ? "You've made too many requests. Please wait a minute before trying again."
+              : "Could not fetch AI recommendations.",
           });
+          setAiSimilarRequested(false); // Allow user to try again
         } finally {
           setIsSimilarLoading(false);
         }
       };
       fetchSimilar();
     }
-  }, [content, contentData, toast]);
+  }, [content, contentData, toast, aiSimilarRequested]);
 
   const relatedContent = useMemo(() => {
     if (!content) return [];
@@ -191,13 +196,29 @@ export default function ContentDetailPage() {
         </div>
 
         <div className="mt-16">
-          {isSimilarLoading ? (
-            <div className="flex flex-col items-center justify-center text-center">
-              <h2 className="font-headline text-2xl md:text-3xl font-semibold mb-4">Finding Similar Content...</h2>
-              <Loader2 className="h-8 w-8 animate-spin" />
+          <h2 className="font-headline text-2xl md:text-3xl font-semibold mb-4">AI-Powered: More Like This</h2>
+          {!aiSimilarRequested && !isSimilarLoading && similarContent.length === 0 && (
+            <div className="text-center py-10 bg-card rounded-lg border border-dashed">
+                <p className="text-muted-foreground mb-4">Let our AI find similar content based on this title.</p>
+                <Button onClick={() => setAiSimilarRequested(true)} disabled={isSimilarLoading}>
+                    <Wand2 className="mr-2" />
+                    {isSimilarLoading ? 'Searching...' : 'Find Similar Content'}
+                </Button>
             </div>
-          ) : similarContent.length > 0 && (
-            <ContentCarousel title="AI-Powered: More Like This" content={similarContent} />
+          )}
+          {isSimilarLoading && (
+            <div className="flex flex-col items-center justify-center text-center py-10">
+              <Loader2 className="h-8 w-8 animate-spin" />
+              <p className="mt-4 text-muted-foreground">Our AI is searching...</p>
+            </div>
+          )}
+          {!isSimilarLoading && aiSimilarRequested && similarContent.length > 0 && (
+            <ContentCarousel content={similarContent} />
+          )}
+           {!isSimilarLoading && aiSimilarRequested && similarContent.length === 0 && (
+            <div className="text-center py-10 bg-card rounded-lg border border-dashed">
+                <p className="text-muted-foreground">The AI couldn't find any matches in our library for this title.</p>
+            </div>
           )}
         </div>
       </div>
