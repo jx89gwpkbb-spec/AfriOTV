@@ -85,45 +85,53 @@ export default function ProfilePage() {
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    let hasChanges = false;
+    
+    const nameChanged = displayName !== (profile?.displayName || user.displayName || "");
+    const imageToUpload = imageFile; // Grab a reference to the file
 
-    // --- Update Display Name ---
-    if (user.displayName !== displayName) {
-      hasChanges = true;
-      setIsSaving(true);
-      try {
-        await updateProfile(user, { displayName });
-        const userDocRef = doc(firestore, "users", user.uid);
-        await setDoc(userDocRef, { displayName }, { merge: true })
-          .catch((err) => {
-              const permissionError = new FirestorePermissionError({
-                path: userDocRef.path,
-                operation: 'update',
-                requestResourceData: { displayName }
-              });
-              errorEmitter.emit('permission-error', permissionError);
-              throw err;
-          });
-        toast({ title: "Display Name Updated" });
-      } catch (error: any) {
-        toast({
-          variant: "destructive",
-          title: "Error Updating Name",
-          description: error.message || "An unexpected error occurred.",
-        });
-      } finally {
-        setIsSaving(false);
-      }
+    if (!nameChanged && !imageToUpload) {
+      toast({ description: "You haven't made any changes." });
+      return;
     }
 
-    // --- Handle Image Upload ---
-    if (imageFile) {
-      hasChanges = true;
-      setUploadProgress(0);
+    // Handle name change first, as it's quick
+    if (nameChanged) {
+        setIsSaving(true);
+        try {
+            await updateProfile(user, { displayName });
+            const userDocRef = doc(firestore, "users", user.uid);
+            await setDoc(userDocRef, { displayName }, { merge: true })
+              .catch((err) => {
+                  const permissionError = new FirestorePermissionError({
+                    path: userDocRef.path,
+                    operation: 'update',
+                    requestResourceData: { displayName }
+                  });
+                  errorEmitter.emit('permission-error', permissionError);
+                  throw err; // Re-throw to be caught by the outer catch
+              });
+            toast({ title: "Display Name Updated" });
+        } catch (error: any) {
+            toast({
+                variant: "destructive",
+                title: "Error Updating Name",
+                description: error.message || "An unexpected error occurred.",
+            });
+            // If name update fails, don't proceed to image upload if it exists
+            setIsSaving(false);
+            return; 
+        } finally {
+            setIsSaving(false); // Always stop saving state for name
+        }
+    }
+
+    // Now, handle image upload if it exists
+    if (imageToUpload) {
+      setUploadProgress(0); // Kick off the upload UI
+      setImageFile(null); // Clear from state to prevent re-upload on error/retry
+
       const storageRef = ref(storage, `profile_pictures/${user.uid}`);
-      const uploadTask = uploadBytesResumable(storageRef, imageFile);
-      const fileToUpload = imageFile;
-      setImageFile(null); // Prevent re-upload
+      const uploadTask = uploadBytesResumable(storageRef, imageToUpload);
 
       uploadTask.on('state_changed',
         (snapshot) => {
@@ -137,13 +145,17 @@ export default function ProfilePage() {
             title: "Upload Failed",
             description: "Could not upload your new profile picture.",
           });
-          setUploadProgress(null);
-          setImageFile(fileToUpload); // Restore for retry
+          setUploadProgress(null); // Reset UI
+          setImageFile(imageToUpload); // Restore file for retry
         },
-        async () => {
+        async () => { // On success
           try {
             const newPhotoURL = await getDownloadURL(uploadTask.snapshot.ref);
+            
+            // Update auth profile
             await updateProfile(user, { photoURL: newPhotoURL });
+            
+            // Update firestore profile
             const userDocRef = doc(firestore, "users", user.uid);
             await setDoc(userDocRef, { photoURL: newPhotoURL }, { merge: true })
               .catch((err) => {
@@ -153,33 +165,29 @@ export default function ProfilePage() {
                       requestResourceData: { photoURL: newPhotoURL }
                   });
                   errorEmitter.emit('permission-error', permissionError);
-                  throw err;
+                  throw err; // Re-throw to be caught by this inner catch
               });
 
+            // Update local state
             setPhotoURL(newPhotoURL);
             setImagePreview(null);
-            setUploadProgress(null);
             toast({
               title: "Profile Picture Updated",
               description: "Your new picture has been saved.",
             });
+
           } catch (error: any) {
             toast({
               variant: "destructive",
               title: "Save Failed",
               description: "Could not save the new profile picture URL.",
             });
-            setUploadProgress(null);
-            setImageFile(fileToUpload);
+            setImageFile(imageToUpload); // Restore for retry
+          } finally {
+              setUploadProgress(null); // Reset UI regardless of success/fail in this block
           }
         }
       );
-    }
-
-    if (!hasChanges) {
-      toast({
-        description: "You haven't made any changes.",
-      });
     }
   };
   
