@@ -80,9 +80,8 @@ export default function PlayPage() {
             <video 
               className="w-full h-full"
               controls
-              autoPlay
               playsInline
-              src={content.videoUrl}
+              src={videoUrl}
               poster={content.coverPath}
             >
               Your browser does not support the video tag.
