@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { User, LogOut, Settings, Shield } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
 
 export function UserNav() {
   const { user, profile, claims, isLoading } = useUser();
@@ -70,7 +71,10 @@ export function UserNav() {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{profile?.displayName || user.displayName}</p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium leading-none truncate">{profile?.displayName || user.displayName}</p>
+              {claims?.admin && <Badge variant="secondary">Admin</Badge>}
+            </div>
             <p className="text-xs leading-none text-muted-foreground">
               {user.email}
             </p>

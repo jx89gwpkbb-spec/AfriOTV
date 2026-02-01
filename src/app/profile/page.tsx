@@ -13,9 +13,10 @@ import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
+import { Badge } from "@/components/ui/badge";
 
 export default function ProfilePage() {
-  const { user, profile, isLoading: isUserLoading } = useUser();
+  const { user, profile, claims, isLoading: isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const router = useRouter();
@@ -92,7 +93,10 @@ export default function ProfilePage() {
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="font-headline text-4xl md:text-5xl font-bold mb-8">My Profile</h1>
+      <div className="flex items-center gap-4 mb-8">
+        <h1 className="font-headline text-4xl md:text-5xl font-bold">My Profile</h1>
+        {claims?.admin && <Badge variant="secondary" className="h-fit py-1 px-3 text-base">Admin</Badge>}
+      </div>
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
           <CardTitle>Profile Information</CardTitle>
