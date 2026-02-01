@@ -49,6 +49,7 @@
             "description": { "type": "string", "description": "A brief synopsis of the content." },
             "posterPath": { "type": "string", "format": "uri", "description": "URL for the poster image." },
             "coverPath": { "type": "string", "format": "uri", "description": "URL for the cover/backdrop image." },
+            "videoUrl": { "type": "string", "format": "uri", "description": "URL for the video file to be played." },
             "genres": { "type": "array", "items": { "type": "string" }, "description": "An array of genres." },
             "cast": { "type": "array", "items": { "type": "string" }, "description": "An array of main cast members." },
             "rating": { "type": "number", "description": "The content's original rating (e.g., from an external source)." },
@@ -57,7 +58,7 @@
             "isTrending": { "type": "boolean", "description": "Whether the content is currently trending." },
             "createdAt": { "type": "string", "format": "date-time", "description": "The timestamp when the content was added." }
         },
-        "required": ["title", "type", "description", "posterPath", "coverPath", "genres", "cast", "rating", "duration", "releaseYear", "createdAt"]
+        "required": ["title", "type", "description", "posterPath", "coverPath", "videoUrl", "genres", "cast", "rating", "duration", "releaseYear", "createdAt"]
     },
     "Review": {
       "title": "Review",

@@ -5,12 +5,14 @@ export type Content = {
   description: string;
   posterPath: string;
   coverPath: string;
+  videoUrl: string;
   genres: string[];
   rating: number;
   duration: string;
   cast: string[];
   releaseYear: number;
   isTrending?: boolean;
+  createdAt?: any;
 };
 
 export interface UserProfile {

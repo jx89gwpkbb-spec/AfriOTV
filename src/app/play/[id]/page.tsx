@@ -37,7 +37,7 @@ export default function PlayPage({ params }: { params: { id: string } }) {
           className="w-full h-full"
           controls
           autoPlay
-          src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+          src={content.videoUrl}
           poster={content.coverPath}
         >
           Your browser does not support the video tag.

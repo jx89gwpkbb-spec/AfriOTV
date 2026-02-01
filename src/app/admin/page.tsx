@@ -62,6 +62,7 @@ const contentFormSchema = z.object({
   description: z.string().min(10, { message: "Description must be at least 10 characters." }),
   posterPath: z.string().url({ message: "Please enter a valid poster image URL." }),
   coverPath: z.string().url({ message: "Please enter a valid cover image URL." }),
+  videoUrl: z.string().url({ message: "Please enter a valid video URL." }),
   genres: z.string().min(1, { message: "Please enter at least one genre." }),
   cast: z.string().min(1, { message: "Please enter at least one cast member." }),
   rating: z.coerce.number().min(0).max(10, { message: "Rating must be between 0 and 10." }),
@@ -108,6 +109,7 @@ export default function AdminPage() {
       description: "",
       posterPath: "https://picsum.photos/seed/10/500/750",
       coverPath: "https://picsum.photos/seed/11/1280/720",
+      videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
       genres: "Action, Sci-Fi",
       cast: "Chris Pratt, Zoe Saldana",
       rating: 7.5,
@@ -374,6 +376,19 @@ export default function AdminPage() {
                     )}
                   />
                 </div>
+                <FormField
+                    control={contentForm.control}
+                    name="videoUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Video URL</FormLabel>
+                        <FormControl>
+                          <Input placeholder="https://..." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                    <FormField
                     control={contentForm.control}
