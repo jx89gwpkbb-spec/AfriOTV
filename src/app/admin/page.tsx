@@ -109,7 +109,7 @@ export default function AdminPage() {
       description: "",
       posterPath: "https://picsum.photos/seed/10/500/750",
       coverPath: "https://picsum.photos/seed/11/1280/720",
-      videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+      videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       genres: "Action, Sci-Fi",
       cast: "Chris Pratt, Zoe Saldana",
       rating: 7.5,
@@ -214,8 +214,8 @@ export default function AdminPage() {
   }
 
   // Temporary developer workaround:
-  // The following block is commented out to allow any logged-in user to see the admin page.
-  // In a production app, you should re-enable this to ensure only admins can access it.
+  // The following block allows any logged-in user to see the admin page.
+  // In a production app, you should re-enable the proper check to ensure only admins can access it.
   /*
   if (!claims?.admin) {
     return (
